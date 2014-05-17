@@ -12,16 +12,17 @@ LINK          = g++
 MAKE          = make
 DELETEFILE    = rm -f
 DEFINES       = -DQT_WEBKIT -DGL_GLEXT_PROTOTYPES
+COMMON_CXX_FLAGS = -std=c++11
 
 ####### Detect debug or release
 
 DEBUG         = 0
 ifeq ($(DEBUG), 1)
-	CXXFLAGS      = -pipe -DDEBUG -g $(DEFINES)
+	CXXFLAGS      = -pipe -DDEBUG $(COMMON_CXX_FLAGS) -g $(DEFINES)
 	LFLAGS        = 
 	RELEASETYPE   = Debug
 else
-	CXXFLAGS      = -pipe -O2 $(DEFINES)
+	CXXFLAGS      = -pipe -O2 $(COMMON_CXX_FLAGS) $(DEFINES)
 	LFLAGS        = -O1
 	RELEASETYPE   = Release
 endif
@@ -34,6 +35,9 @@ COMMONRENDERPATH = ../CommonRender
 INCPATH       = -I. -I.. -I$(COMMONRENDERPATH) -I$(LIBOVRPATH)/Include -I$(LIBOVRPATH)/Src
 OBJPATH       = ./Obj/Linux/$(RELEASETYPE)/$(SYSARCH)
 CXX_BUILD     = $(CXX) -c $(CXXFLAGS) $(INCPATH) -o $(OBJPATH)/
+BUILD_DIRS		:= Debug Release
+FOURD_MODULES   := common
+FOURD_OBJ       := $(foreach sdir,$(FOURD_MODULES),$(wildcard $(addprefix ../fourd/build/,$(sdir)/*.o)))
 
 ####### Files
 
@@ -54,19 +58,29 @@ OBJECTS       = $(OBJPATH)/Hackulus.o \
 		$(OBJPATH)/Render_GL_Device.o \
 		$(OBJPATH)/Render_LoadTextureDDS.o \
 		$(OBJPATH)/Render_LoadTextureTGA.o \
-		$(OBJPATH)/Render_XmlSceneLoader.o 
+		$(OBJPATH)/Render_XmlSceneLoader.o
 
 TARGET        = ./Release/Hackulus_$(SYSARCH)_$(RELEASETYPE)
 
 ####### Rules
 
-all:    $(TARGET)
+all:    checkdirs $(TARGET)
+
+checkdirs: $(BUILD_DIRS)
+
+$(BUILD_DIRS):
+	@mkdir -p $@
 
 $(TARGET):  $(LIBOVRPATH)/Lib/Linux/$(RELEASETYPE)/$(SYSARCH)/libovr.a
 	$(MAKE) -C $(LIBOVRPATH) DEBUG=$(DEBUG)
 
 $(TARGET):  $(OBJECTS)
-	$(LINK) $(LFLAGS) -o $(TARGET) $(OBJECTS) $(LIBS)
+	$(LINK) $(LFLAGS) -o $(TARGET) $(OBJECTS) $(FOURD_OBJ) $(LIBS)
+
+$(FOURD_OBJ):
+	cd ../fourd;
+	make;
+	cd ../App;
 
 $(OBJPATH)/Hackulus.o: Hackulus.cpp 
 	$(CXX_BUILD)Hackulus.o Hackulus.cpp

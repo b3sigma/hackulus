@@ -6,6 +6,10 @@
 #include "../CommonRender/Render/Render_FontEmbed_DejaVu48.h"
 #include "../CommonRender/Platform/Gamepad.h"
 
+#include "../fourd/common/fourmath.h"
+#include "../fourd/common/mesh.h"
+
+
 #include <Kernel/OVR_SysFile.h>
 #include <Kernel/OVR_Log.h>
 #include <Kernel/OVR_Timer.h>
@@ -270,6 +274,9 @@ int HackulusApp::OnStartup(int argc, const char** argv) {
   // Create DeviceManager and first available HMDDevice from it.
   // Sensor object is created from the HMD, to ensure that it is on the
   // correct device.
+
+  fd::Mesh tesseract;
+  tesseract.buildTesseract(10.0f, fd::Vec4f(0,0,0,0), fd::Vec4f(0, 1, 2, 0));
 
   pManager = *DeviceManager::Create();
 
