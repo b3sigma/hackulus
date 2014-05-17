@@ -60,7 +60,7 @@ OBJECTS       = $(OBJPATH)/Hackulus.o \
 		$(OBJPATH)/Render_LoadTextureTGA.o \
 		$(OBJPATH)/Render_XmlSceneLoader.o
 
-TARGET        = ./Release/Hackulus_$(SYSARCH)_$(RELEASETYPE)
+TARGET        = ./$(RELEASETYPE)/Hackulus_$(SYSARCH)_$(RELEASETYPE)
 
 ####### Rules
 

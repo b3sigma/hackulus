@@ -148,11 +148,13 @@ struct Vector4f: public Vector3f {
   float w;
 
   Vector4f()
-      : w(1) {
+      : w(1.0f) {
   }
   Vector4f(const Vector3f& v)
-      : Vector3f(v), w(1) {
+      : Vector3f(v), w(1.0f) {
   }
+  Vector4f(float r, float g, float b)
+      : Vector3f(r, g, b), w(1.0f) {}
   Vector4f(float r, float g, float b, float a)
       : Vector3f(r, g, b), w(a) {
   }
@@ -419,15 +421,19 @@ public:
 };
 
 struct Vertex {
-  Vector3f Pos;
-  Color C;
+  Vector4f Pos;
+  Vector4f Norm;
   float U, V;
   float U2, V2;
-  Vector3f Norm;
+  Color C;
 
   Vertex(const Vector3f& p, const Color& c = Color(64, 0, 0, 255), float u = 0,
       float v = 0, Vector3f n = Vector3f(1, 0, 0))
-      : Pos(p), C(c), U(u), V(v), Norm(n), U2(u), V2(v) {
+      : Pos(p), Norm(n), U(u), V(v), U2(u), V2(v), C(c) {
+  }
+  Vertex(const Vector4f& p, const Color& c = Color(64, 0, 0, 255), float u = 0,
+      float v = 0, Vector4f n = Vector4f(1, 0, 0, 0))
+      : Pos(p), Norm(n), U(u), V(v), U2(u), V2(v), C(c) {
   }
   Vertex(float x, float y, float z, const Color& c = Color(64, 0, 0, 255),
       float u = 0, float v = 0)

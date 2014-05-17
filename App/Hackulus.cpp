@@ -27,19 +27,6 @@ using namespace OVR;
 using namespace OVR::Platform;
 using namespace OVR::Render;
 
-//-------------------------------------------------------------------------------------
-// ***** OculusWorldDemo Description
-
-// This app renders a simple flat-shaded room allowing the user to move along the
-// floor and look around with an HMD, mouse and keyboard. The following keys work:
-//
-//  'W', 'S', 'A', 'D' and Arrow Keys - Move forward, back; strafe left/right.
-//  F1 - No stereo, no distortion.
-//  F2 - Stereo, no distortion.
-//  F3 - Stereo and distortion.
-//  F4 - Toggle MSAA.
-//  F9 - Cycle through fullscreen and windowed modes. Necessary for previewing content with Rift.
-//
 // Important Oculus-specific logic can be found at following locations:
 //
 //  HackulusApp::OnStartup - This function will initialize OVR::DeviceManager and HMD,
@@ -50,10 +37,6 @@ using namespace OVR::Render;
 //                                    to the scene and handle movement.
 //                                    Stereo rendering is also done here, by delegating to
 //                                    to Render function for each eye.
-//
-
-//-------------------------------------------------------------------------------------
-// ***** OculusWorldDemo Application class
 
 // An instance of this class is created on application startup (main/WinMain).
 // It then works as follows:
@@ -275,9 +258,6 @@ int HackulusApp::OnStartup(int argc, const char** argv) {
   // Sensor object is created from the HMD, to ensure that it is on the
   // correct device.
 
-  fd::Mesh tesseract;
-  tesseract.buildTesseract(10.0f, fd::Vec4f(0,0,0,0), fd::Vec4f(0, 1, 2, 0));
-
   pManager = *DeviceManager::Create();
 
   // We'll handle it's messages in this case.
@@ -458,6 +438,7 @@ void HackulusApp::OnMessage(const Message& msg) {
 
         default:
           OVR_ASSERT(0);
+          break;
           // unexpected type
       }
     }
@@ -1002,7 +983,7 @@ void HackulusApp::OnIdle() {
             break;
           }
           default:
-            ;
+            break;
         }
       } else if (desc.Action == Message_DeviceRemoved) {
         if (desc.Handle.IsDevice(pSensor)) {
@@ -1039,9 +1020,10 @@ void HackulusApp::OnIdle() {
             LogText("HMD device removed.\n");
           }
         }
-      } else
+      } else {
         OVR_ASSERT(0);
-      // unexpected action
+        // unexpected action
+      }
     }
   }
 
@@ -1265,8 +1247,7 @@ void HackulusApp::Render(const StereoEyeParams& stereo) {
       }
 
       DrawTextBox(pRender, 0.0f, -0.15f, textHeight, buf, DrawText_HCenter);
-    }
-      break;
+    } break;
 
     case Text_Config: {
       char textBuff[2048];
@@ -1283,11 +1264,11 @@ void HackulusApp::Render(const StereoEyeParams& stereo) {
           SConfig.GetDistortionScale());
 
       DrawTextBox(pRender, 0.0f, 0.0f, textHeight, textBuff, DrawText_Center);
-    }
-      break;
+    } break;
 
     case Text_Help:
       DrawTextBox(pRender, 0.0f, -0.1f, textHeight, HelpText, DrawText_Center);
+      break;
 
     default:
       break;
@@ -1421,6 +1402,10 @@ void HackulusApp::PopulateScene(const char *fileName) {
       yawLinesModel->AddVertex(Vector3f(r + 0.1f, 0, -r), c));
   yawLinesModel->SetPosition(Vector3f(0.0f, -1.2f, 0.0f));
   YawLinesScene.World.Add(yawLinesModel);
+
+
+  fd::Mesh tesseract;
+  tesseract.buildTesseract(10.0f, fd::Vec4f(0,0,0,0), fd::Vec4f(0, 1, 2, 0));
 }
 
 void HackulusApp::PopulatePreloadScene() {
