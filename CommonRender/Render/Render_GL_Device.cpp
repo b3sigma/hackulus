@@ -108,6 +108,39 @@ void InitGLExtensions()
 
 #endif
 
+static const char* StdVertexFourToThreeSrc =
+    "uniform mat4 WorldMat;\n"
+    "uniform vec4 WorldPos;\n"
+    "uniform vec4 CameraPos;\n"
+    "uniform mat4 CameraMatrix;\n"
+    "uniform mat4 Proj;\n"
+    "uniform mat4 FourToThree;\n"
+    "attribute vec4 Position;\n"
+    "attribute vec4 Color;\n"
+    ""
+    "varying vec3 oVPos;\n"
+    "varying vec4 oColor;\n"
+    "void main() {\n"
+    "  vec4 worldSpace = WorldMat * Position;\n"
+    "  worldSpace += WorldPos;\n"
+    "  vec4 cameraSpace = worldSpace - CameraPos;\n"
+    "  cameraSpace = CameraMatrix * cameraSpace;\n"
+    "  vec4 threeSpace = FourToThree * cameraSpace;\n"
+    "  float savedW = threeSpace.w;\n"
+    "  threeSpace.w = 1.0;\n"
+    "  oVPos = threeSpace.xyz;\n"
+    "  vec4 homogenous = Proj * threeSpace;\n"
+    "  homogenous.w = abs(homogenous.w + savedW);\n"
+    "  homogenous.z = abs(homogenous.z);\n"
+    "  gl_Position = homogenous;\n"
+    "  oColor.a = 0.2;\n"
+    "  oColor.g = Color.y;\n"
+    "  oColor.r = abs(savedW / 10.0);\n"
+    "  oColor.b = abs(threeSpace.x / 10.0);\n"
+    "  oColor.rgb = max(oColor.rgb, vec3(0,0,0));\n"
+    "  oColor.rgb += vec3(0.1,0.1,0.1);\n"
+    "}\n";
+
 static const char* StdVertexShaderSrc = "uniform mat4 Proj;\n"
     "uniform mat4 View;\n"
     "attribute vec4 Position;\n"
@@ -311,7 +344,7 @@ static const char* PostProcessFullFragShaderSrc = "uniform vec2 LensCenter;\n"
     "}\n";
 
 static const char* VShaderSrcs[VShader_Count] = { DirectVertexShaderSrc,
-    StdVertexShaderSrc, PostProcessVertexShaderSrc };
+    StdVertexShaderSrc, PostProcessVertexShaderSrc, StdVertexFourToThreeSrc};
 static const char* FShaderSrcs[FShader_Count] = { SolidFragShaderSrc,
     GouraudFragShaderSrc, TextureFragShaderSrc, AlphaTextureFragShaderSrc,
     PostProcessFragShaderSrc, PostProcessFullFragShaderSrc,
@@ -612,7 +645,7 @@ bool Shader::Compile(const char* src) {
     GLchar msg[1024];
     glGetShaderInfoLog(GLShader, sizeof(msg), 0, msg);
     if (msg[0])
-      OVR_DEBUG_LOG(("Compiling shader\n%s\nfailed: %s\n", src, msg));
+      OVR::LogError("Compiling shader\n%s\nfailed: %s\n", src, msg);
     if (!r)
       return 0;
   }

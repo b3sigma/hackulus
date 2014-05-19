@@ -84,7 +84,8 @@ enum BuiltinShaders {
   VShader_MV = 0,
   VShader_MVP = 1,
   VShader_PostProcess = 2,
-  VShader_Count = 3,
+  VShader_FourToThree = 3,
+  VShader_Count = 4,
 
   FShader_Solid = 0,
   FShader_Gouraud = 1,

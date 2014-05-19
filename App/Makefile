@@ -18,7 +18,7 @@ COMMON_CXX_FLAGS = -std=c++11
 
 DEBUG         = 0
 ifeq ($(DEBUG), 1)
-	CXXFLAGS      = -pipe -DDEBUG $(COMMON_CXX_FLAGS) -g $(DEFINES)
+	CXXFLAGS      = -pipe -DDEBUG $(COMMON_CXX_FLAGS) -g $(DEFINES) # -DOVR_BUILD_DEBUG
 	LFLAGS        = 
 	RELEASETYPE   = Debug
 else
