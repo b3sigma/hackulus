@@ -1,6 +1,8 @@
 #ifndef OVR_WorldDemo_Player_h
 #define OVR_WorldDemo_Player_h
 
+#include "../fourd/common/camera.h"
+
 #include "OVR.h"
 #include "../CommonRender/Render/Render_Device.h"
 
@@ -31,6 +33,25 @@ const float RailHeight = 0.8f;
 class Player {
 public:
 
+  enum InputType {
+    MoveForward,
+    MoveBackward,
+    MoveLeft,
+    MoveRight,
+    MoveUp,
+    MoveDown,
+    MoveIn,
+    MoveOut,
+    RollRightUp,
+    RollInsideRight,
+    RollUpInside,
+    NumInputTypes,
+  };
+  void SetInput(InputType type, bool isDown, int mask = 1);
+
+
+  fd::Camera camera_;
+
   float UserEyeHeight;
 
   // Position and look. The following apply:
@@ -41,10 +62,7 @@ public:
   float LastSensorYaw; // Stores previous Yaw value from to support computing delta.
 
   // Movement state; different bits may be set based on the state of keys.
-  UByte MoveForward;
-  UByte MoveBack;
-  UByte MoveLeft;
-  UByte MoveRight;
+  UByte Inputs[NumInputTypes];
   Vector3f GamepadMove, GamepadRotate;
 
   Player();

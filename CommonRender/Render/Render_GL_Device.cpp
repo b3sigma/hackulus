@@ -130,8 +130,6 @@ static const char* StdVertexFourToThreeSrc =
     "  threeSpace.w = 1.0;\n"
     "  oVPos = threeSpace.xyz;\n"
     "  vec4 homogenous = Proj * threeSpace;\n"
-    "  homogenous.w = abs(homogenous.w + savedW);\n"
-    "  homogenous.z = abs(homogenous.z);\n"
     "  gl_Position = homogenous;\n"
     "  oColor.a = 0.2;\n"
     "  oColor.g = Color.y;\n"
@@ -537,6 +535,29 @@ void RenderDevice::Render(const Fill* fill, Render::Buffer* vertices,
     glUniformMatrix4fv(shaders->ViewLoc, 1, 0, &matrix.Transposed().M[0][0]);
   }
 
+  fd::Mat4f iden;
+  iden.storeIdentity();
+  if (shaders->WorldMatLoc >= 0) {
+    glUniformMatrix4fv(shaders->WorldMatLoc, 1, false, iden.raw());
+  }
+
+  fd::Vec4f zero;
+  if (shaders->WorldPosLoc >= 0) {
+    glUniform4fv(shaders->WorldPosLoc, 1, zero.raw());
+  }
+
+  if (shaders->CameraPosLoc >= 0) {
+    glUniform4fv(shaders->CameraPosLoc, 1, zero.raw());
+  }
+
+  if (shaders->CameraMatrixLoc >= 0) {
+    glUniformMatrix4fv(shaders->CameraMatrixLoc, 1, false, iden.raw());
+  }
+
+  if (shaders->FourToThreeLoc >= 0) {
+    glUniformMatrix4fv(shaders->FourToThreeLoc, 1, false, iden.raw());
+  }
+
   if (shaders->UsesLighting && Lighting->Version != shaders->LightingVer) {
     shaders->LightingVer = Lighting->Version;
     Lighting->Set(shaders);
@@ -652,9 +673,13 @@ bool Shader::Compile(const char* src) {
   return 1;
 }
 
-ShaderSet::ShaderSet() {
+ShaderSet::ShaderSet()
+    : WorldMatLoc(0), WorldPosLoc(0), CameraPosLoc(0), CameraMatrixLoc(0)
+     ,FourToThreeLoc(0), ProjLoc(0), ViewLoc(0)
+ {
   Prog = glCreateProgram();
 }
+
 ShaderSet::~ShaderSet() {
   glDeleteProgram(Prog);
 }
@@ -728,6 +753,14 @@ bool ShaderSet::Link() {
 
   ProjLoc = glGetUniformLocation(Prog, "Proj");
   ViewLoc = glGetUniformLocation(Prog, "View");
+
+  // FourD only params
+  WorldMatLoc = glGetUniformLocation(Prog, "WorldMat");
+  WorldPosLoc = glGetUniformLocation(Prog, "WorldPos");
+  CameraPosLoc = glGetUniformLocation(Prog, "CameraPos");
+  CameraMatrixLoc = glGetUniformLocation(Prog, "CameraMatrix");
+  FourToThreeLoc = glGetUniformLocation(Prog, "FourToThree");
+
   for (int i = 0; i < 8; i++) {
     char texv[32];
     sprintf(texv, "Texture%d", i);

@@ -1,39 +1,46 @@
+#include <assert.h>
 #include "Player.h"
 #include <Kernel/OVR_Alg.h>
 
 Player::Player(void)
-    : UserEyeHeight(1.8f), EyePos(7.7f, 1.8f, -1.0f), EyeYaw(YawInitial), EyePitch(
-        0), EyeRoll(0), LastSensorYaw(0) {
-  MoveForward = MoveBack = MoveLeft = MoveRight = 0;
+    : UserEyeHeight(1.8f), EyePos(7.7f, 1.8f, -1.0f), EyeYaw(YawInitial),
+      EyePitch(0), EyeRoll(0), LastSensorYaw(0),
+      camera_(fd::Camera::LOOK) {
   GamepadMove = Vector3f(0);
   GamepadRotate = Vector3f(0);
+  memset(&Inputs, 0, sizeof(Inputs));
 }
 
 Player::~Player(void) {
 }
 
+void Player::SetInput(InputType type, bool isDown, int mask) {
+  assert((int)type >= 0 && (int)type < NumInputTypes);
+  Inputs[type] = (isDown) ? Inputs[type] | mask : Inputs[type] & ~mask;
+}
+
 void Player::HandleCollision(double dt,
     Array<Ptr<CollisionModel> >* collisionModels,
     Array<Ptr<CollisionModel> >* groundCollisionModels, bool shiftDown) {
-  if (MoveForward || MoveBack || MoveLeft || MoveRight
+  if (Inputs[MoveForward] || Inputs[MoveBackward] || Inputs[MoveLeft] || Inputs[MoveRight]
       || GamepadMove.LengthSq() > 0) {
     Vector3f orientationVector;
     // Handle keyboard movement.
     // This translates EyePos based on Yaw vector direction and keys pressed.
     // Note that Pitch and Roll do not affect movement (they only affect view).
-    if (MoveForward || MoveBack || MoveLeft || MoveRight) {
+    if (Inputs[MoveForward] || Inputs[MoveBackward] || Inputs[MoveLeft] || Inputs[MoveRight]) {
       Vector3f localMoveVector(0, 0, 0);
       Matrix4f yawRotate = Matrix4f::RotationY(EyeYaw);
 
-      if (MoveForward) {
+      if (Inputs[MoveForward]) {
         localMoveVector = ForwardVector;
-      } else if (MoveBack) {
+      } else if (Inputs[MoveBackward]) {
         localMoveVector = -ForwardVector;
       }
 
-      if (MoveRight) {
+      if (Inputs[MoveRight]) {
         localMoveVector += RightVector;
-      } else if (MoveLeft) {
+      } else if (Inputs[MoveLeft]) {
         localMoveVector -= RightVector;
       }
 

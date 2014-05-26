@@ -24,6 +24,8 @@ limitations under the License.
 #ifndef OVR_Platform_Linux_h
 #define OVR_Platform_Linux_h
 
+#include "../../fourd/common/fourmath.h"
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <GL/glx.h>

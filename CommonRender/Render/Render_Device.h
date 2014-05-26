@@ -1,27 +1,7 @@
-/************************************************************************************
-
- Filename    :   Render_Device.h
- Content     :   Platform renderer for simple scene graph
- Created     :   September 6, 2012
- Authors     :   Andrew Reisse
-
- Copyright   :   Copyright 2012 Oculus VR, Inc. All Rights reserved.
-
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-
- http://www.apache.org/licenses/LICENSE-2.0
-
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
-
- ************************************************************************************/
 #ifndef OVR_Render_Device_h
 #define OVR_Render_Device_h
+
+#include "../../fourd/common/fourmath.h"
 
 #include "Kernel/OVR_Math.h"
 #include "Kernel/OVR_Array.h"
@@ -159,6 +139,7 @@ struct Vector4f: public Vector3f {
   Vector4f(float r, float g, float b, float a)
       : Vector3f(r, g, b), w(a) {
   }
+  Vector4f(fd::Vec4f v) : Vector3f(v.x, v.y, v.z), w(v.w) {}
 };
 
 class Shader: public RefCountBase<Shader> {
@@ -440,7 +421,10 @@ struct Vertex {
       float u = 0, float v = 0)
       : Pos(x, y, z), C(c), U(u), V(v), U2(u), V2(v) {
   }
-
+  Vertex(const fd::Vec4f& p, const Color& c = Color(64, 0, 0, 255), float u = 0,
+      float v = 0, Vector4f n = Vector4f(1, 0, 0, 0))
+      : Pos(p), Norm(n), U(u), V(v), U2(u), V2(v), C(c) {
+  }
   // for multiple UV coords
   Vertex(const Vector3f& p, const Color& c, float u, float v, float u2,
       float v2, Vector3f n)
@@ -486,7 +470,7 @@ public:
   Ptr<Buffer> IndexBuffer;
 
   Model(PrimitiveType t = Prim_Triangles)
-      : Type(t), Fill(NULL), Visible(true) {
+      : Type(t), Fill(NULL), Visible(true), IsCollisionModel(false) {
   }
   ~Model() {
   }
@@ -531,6 +515,9 @@ public:
   UInt16 AddVertex(float x, float y, float z, const Color& c, float u,
       float v) {
     return AddVertex(Vertex(Vector3f(x, y, z), c, u, v));
+  }
+  UInt16 AddVertex(const fd::Vec4f& p) {
+    return AddVertex(Vertex(p));
   }
 
   void AddLine(UInt16 a, UInt16 b) {
@@ -599,6 +586,10 @@ public:
     return Node_Container;
   }
 
+  UPInt GetNumNodes() const {
+    return Nodes.GetSize();
+  }
+
   virtual void Render(const Matrix4f& ltw, RenderDevice* ren);
 
   void Add(Node *n) {
@@ -631,6 +622,8 @@ public:
 
 public:
   void Render(RenderDevice* ren, const Matrix4f& view);
+
+  virtual void GetDebugString(char* str, UPInt destSize) const;
 
   void SetAmbient(Vector4f color) {
     Lighting.Ambient = color;
@@ -771,6 +764,10 @@ public:
 
   const RendererParams& GetParams() const {
     return Params;
+  }
+
+  virtual void GetDebugString(char* str, UPInt destSize) const {
+    OVR_sprintf(str, destSize, "");
   }
 
   // StereoParams apply Viewport, Projection and Distortion simultaneously,
@@ -976,3 +973,21 @@ Texture* LoadTextureDDS(RenderDevice* ren, File* f);
 }
 
 #endif
+
+/************************************************************************************
+ Modified from:
+ Copyright   :   Copyright 2012 Oculus VR, Inc. All Rights reserved.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+ http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ ************************************************************************************/

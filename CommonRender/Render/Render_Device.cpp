@@ -57,6 +57,11 @@ void LightingParams::Update(const Matrix4f& view,
   }
 }
 
+void Scene::GetDebugString(char* str, UPInt destSize) const {
+  OVR_sprintf(str, destSize, "Nodes:%d", World.GetNumNodes());
+}
+
+
 void Scene::Render(RenderDevice* ren, const Matrix4f& view) {
   Lighting.Update(view, LightPos);
 
@@ -984,9 +989,9 @@ int GetTextureSize(int format, int w, int h) {
       return bw * bh * 16;
     }
 
-    default:
+    default: {
       OVR_ASSERT(0);
-      break;
+    } break;
   }
   return 0;
 }

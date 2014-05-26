@@ -170,7 +170,16 @@ public:
   };
   Array<Uniform> UniformInfo;
 
-  int ProjLoc, ViewLoc;
+  int ProjLoc;
+  int ViewLoc;
+
+  // FourD only params
+  int WorldMatLoc;
+  int WorldPosLoc;
+  int CameraPosLoc;
+  int CameraMatrixLoc;
+  int FourToThreeLoc;
+
   int TexLoc[8];
   bool UsesLighting;
   int LightingVer;

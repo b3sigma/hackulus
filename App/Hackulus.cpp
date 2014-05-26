@@ -1,3 +1,6 @@
+#include "../fourd/common/fourmath.h"
+#include "../fourd/common/mesh.h"
+
 #include "OVR.h"
 
 #include "../CommonRender/Platform/Platform_Default.h"
@@ -6,8 +9,6 @@
 #include "../CommonRender/Render/Render_FontEmbed_DejaVu48.h"
 #include "../CommonRender/Platform/Gamepad.h"
 
-#include "../fourd/common/fourmath.h"
-#include "../fourd/common/mesh.h"
 
 
 #include <Kernel/OVR_SysFile.h>
@@ -17,7 +18,8 @@
 #include "Player.h"
 
 // Filename to be loaded by default, searching specified paths.
-#define WORLDDEMO_ASSET_FILE  "Tuscany.xml"
+//#define WORLDDEMO_ASSET_FILE  "Tuscany.xml"
+#define WORLDDEMO_ASSET_FILE  "Trivial.xml"
 #define WORLDDEMO_ASSET_PATH1 "Assets/Tuscany/"
 #define WORLDDEMO_ASSET_PATH2 "../Assets/Tuscany/"
 // This path allows the shortcut to work.
@@ -489,36 +491,28 @@ void HackulusApp::OnKey(OVR::KeyCode key, int chr, bool down, int modifiers) {
       // We just update movement state here, while the actual translation is done in OnIdle()
       // based on time.
     case Key_W:
-      ThePlayer.MoveForward =
-          down ? (ThePlayer.MoveForward | 1) : (ThePlayer.MoveForward & ~1);
+      ThePlayer.SetInput(Player::MoveForward, down, 1);
       break;
     case Key_S:
-      ThePlayer.MoveBack =
-          down ? (ThePlayer.MoveBack | 1) : (ThePlayer.MoveBack & ~1);
+      ThePlayer.SetInput(Player::MoveBackward, down, 1);
       break;
     case Key_A:
-      ThePlayer.MoveLeft =
-          down ? (ThePlayer.MoveLeft | 1) : (ThePlayer.MoveLeft & ~1);
+      ThePlayer.SetInput(Player::MoveLeft, down, 1);
       break;
     case Key_D:
-      ThePlayer.MoveRight =
-          down ? (ThePlayer.MoveRight | 1) : (ThePlayer.MoveRight & ~1);
+      ThePlayer.SetInput(Player::MoveRight, down, 1);
       break;
     case Key_Up:
-      ThePlayer.MoveForward =
-          down ? (ThePlayer.MoveForward | 2) : (ThePlayer.MoveForward & ~2);
+      ThePlayer.SetInput(Player::MoveForward, down, 2);
       break;
     case Key_Down:
-      ThePlayer.MoveBack =
-          down ? (ThePlayer.MoveBack | 2) : (ThePlayer.MoveBack & ~2);
+      ThePlayer.SetInput(Player::MoveBackward, down, 2);
       break;
     case Key_Left:
-      ThePlayer.MoveLeft =
-          down ? (ThePlayer.MoveLeft | 2) : (ThePlayer.MoveLeft & ~2);
+      ThePlayer.SetInput(Player::MoveLeft, down, 2);
       break;
     case Key_Right:
-      ThePlayer.MoveRight =
-          down ? (ThePlayer.MoveRight | 2) : (ThePlayer.MoveRight & ~2);
+      ThePlayer.SetInput(Player::MoveRight, down, 2);
       break;
 
     case Key_Minus:
@@ -1233,13 +1227,18 @@ void HackulusApp::Render(const StereoEyeParams& stereo) {
 
   switch (TextScreen) {
     case Text_Orientation: {
-      char buf[256], gpustat[256];
+      char buf[256], gpustat[256], worldInfo[256];
+      MainScene.GetDebugString(worldInfo, sizeof(worldInfo));
       OVR_sprintf(buf, sizeof(buf), " Yaw:%4.0f  Pitch:%4.0f  Roll:%4.0f \n"
           " FPS: %d  Frame: %d \n Pos: %3.2f, %3.2f, %3.2f \n"
-          " EyeHeight: %3.2f", RadToDegree(ThePlayer.EyeYaw),
+          " EyeHeight: %3.2f\n"
+          " %s\n",
+          RadToDegree(ThePlayer.EyeYaw),
           RadToDegree(ThePlayer.EyePitch), RadToDegree(ThePlayer.EyeRoll), FPS,
           FrameCounter, ThePlayer.EyePos.x, ThePlayer.EyePos.y,
-          ThePlayer.EyePos.z, ThePlayer.UserEyeHeight);
+          ThePlayer.EyePos.z, ThePlayer.UserEyeHeight,
+          worldInfo
+          );
       size_t texMemInMB = pRender->GetTotalTextureMemoryUsage() / 1058576;
       if (texMemInMB) {
         OVR_sprintf(gpustat, sizeof(gpustat), "\n GPU Tex: %u MB", texMemInMB);
@@ -1403,9 +1402,26 @@ void HackulusApp::PopulateScene(const char *fileName) {
   yawLinesModel->SetPosition(Vector3f(0.0f, -1.2f, 0.0f));
   YawLinesScene.World.Add(yawLinesModel);
 
-
   fd::Mesh tesseract;
   tesseract.buildTesseract(10.0f, fd::Vec4f(0,0,0,0), fd::Vec4f(0, 1, 2, 0));
+  Ptr<Model> tesseractModel = *new Model(Prim_Triangles);
+  // TODO: This is ugly inefficient, fix it.
+  fd::Vec4f triA, triB, triC;
+  for (int tri = 0; tri < tesseract.getNumberTriangles(); ++tri) {
+    tesseract.getTriangle(tri, triA, triB, triC);
+    tesseractModel->AddTriangle(
+        tesseractModel->AddVertex(triB),
+        tesseractModel->AddVertex(triA),
+        tesseractModel->AddVertex(triC));
+  }
+  Ptr<ShaderFill> shader = *new ShaderFill(*pRender->CreateShaderSet());
+  shader->GetShaders()->SetShader(
+      pRender->LoadBuiltinShader(Shader_Vertex, VShader_FourToThree));
+  shader->GetShaders()->SetShader(
+      pRender->LoadBuiltinShader(Shader_Fragment, FShader_Solid));
+  tesseractModel->Fill = shader;
+
+  MainScene.World.Add(tesseractModel);
 }
 
 void HackulusApp::PopulatePreloadScene() {
