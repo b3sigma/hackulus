@@ -55,7 +55,24 @@ public:
   float UserEyeHeight;
 
   // Position and look. The following apply:
+  //Vector4f EyePos;
   Vector3f EyePos;
+
+  // This is the current approach to eye positions
+  // Leave it for now, but the right approach would seem to be to store a full 4d matrix for each eye.
+  // Then, for rotations, pitch changes, or roll changes, we apply the appropriate matrix transform
+  // in the approach combination of spaces. It seems like the eyes can be mapped to a 3d subset of'
+  // coordinates at any given time. Consequently, this would give 4 modes that would be toggled
+  // through in order to select motion. This is probably going to be a vomit comet.
+  // Then again, are 4 modes enough, because for each mode there are 6 different arrangements
+  // of coordinates that make sense. Limits are probably good.
+
+  // The other approach is to simply keep the head movements for 3d only and then do rotations
+  // with the other dimension with some other kind of input. The hard part of this is that
+  // aside from strict translation in w, all the other movements will incorporate some kind
+  // of movement in one of the other dimensions. To constrain it too heavily seems likely
+  // to remove the very purpose of the project.
+
   float EyeYaw; // Rotation around Y, CCW positive when looking at RHS (X,Z) plane.
   float EyePitch; // Pitch. If sensor is plugged in, only read from sensor.
   float EyeRoll; // Roll, only accessible from Sensor.
@@ -67,6 +84,10 @@ public:
 
   Player();
   ~Player();
+
+  // At least collision is ray tracing based, which is probably tractable in 4d.
+  // Although it is going to be interesting trying to figure out what everything means in terms
+  // of being inside stuff or not.
   void HandleCollision(double dt, Array<Ptr<CollisionModel> >* collisionModels,
       Array<Ptr<CollisionModel> >* groundCollisionModels, bool shiftDown);
 };
