@@ -124,22 +124,43 @@ enum SampleMode {
 
 // A vector with a dummy w component for alignment in uniform buffers (and for float colors).
 // The w component is not used in any calculations.
+struct Vector4f : public fd::Vec4f {
+  Vector4f() : fd::Vec4f() {}
+  Vector4f(const Vector4f& v) : fd::Vec4f(v) {}
+  Vector4f(const fd::Vec4f& v) : fd::Vec4f(v) {}
 
-struct Vector4f: public Vector3f {
+  Vector4f(float x, float y, float z, float w)
+      : fd::Vec4f(x, y, z, w) {}
+
+  Vector4f(float x, float y, float z)
+      : fd::Vec4f(x, y, z, 1.0f) {}
+
+  Vector4f(const Vector3f& v)
+      : fd::Vec4f(v.x, v.y, v.z, 1.0f) {}
+
+  Vector4f(const Vector3f&& v)
+      : fd::Vec4f(v.x, v.y, v.z, 1.0f) {}
+
+  Vector3f& asV3() { return *((Vector3f*)this->raw()); }
+  const Vector3f& asV3() const { return *((const Vector3f*)this->raw()); }
+};
+
+
+struct Color4f: public Vector3f {
   float w;
 
-  Vector4f()
+  Color4f()
       : w(1.0f) {
   }
-  Vector4f(const Vector3f& v)
+  Color4f(const Vector3f& v)
       : Vector3f(v), w(1.0f) {
   }
-  Vector4f(float r, float g, float b)
+  Color4f(float r, float g, float b)
       : Vector3f(r, g, b), w(1.0f) {}
-  Vector4f(float r, float g, float b, float a)
+  Color4f(float r, float g, float b, float a)
       : Vector3f(r, g, b), w(a) {
   }
-  Vector4f(fd::Vec4f v) : Vector3f(v.x, v.y, v.z), w(v.w) {}
+  Color4f(fd::Vec4f v) : Vector3f(v.x, v.y, v.z), w(v.w) {}
 };
 
 class Shader: public RefCountBase<Shader> {
@@ -231,8 +252,11 @@ public:
     const float a[] = { v.x, v.y, v.z, 1 };
     return SetUniform(name, 4, a);
   }
-  bool SetUniform4fv(const char* name, int n, const Vector4f* v) {
+  bool SetUniform4fv(const char* name, int n, const Color4f* v) {
     return SetUniform(name, 4 * n, &v[0].x);
+  }
+  bool SetUniform4fv(const char* name, int n, const Vector4f* v) {
+    return SetUniform(name, 4 * n, v->raw());
   }
   virtual bool SetUniform4x4f(const char* name, const Matrix4f& m) {
     return SetUniform(name, 16, &m.M[0][0]);
@@ -438,9 +462,9 @@ struct Vertex {
 
 // this is stored in a uniform buffer, don't change it without fixing all renderers
 struct LightingParams {
-  Vector4f Ambient;
+  Color4f Ambient;
   Vector4f LightPos[8];
-  Vector4f LightColor[8];
+  Color4f LightColor[8];
   float LightCount;
   int Version;
 
@@ -625,10 +649,10 @@ public:
 
   virtual void GetDebugString(char* str, UPInt destSize) const;
 
-  void SetAmbient(Vector4f color) {
+  void SetAmbient(Color4f color) {
     Lighting.Ambient = color;
   }
-  void AddLight(Vector3f pos, Vector4f color) {
+  void AddLight(Vector3f pos, Color4f color) {
     int n = (int) Lighting.LightCount;
     OVR_ASSERT(n < 8);
     LightPos[n] = pos;
@@ -639,7 +663,7 @@ public:
   void Clear() {
     World.Clear();
     Models.Clear();
-    Lighting.Ambient = Vector4f(0.0f, 0.0f, 0.0f, 0.0f);
+    Lighting.Ambient = Color4f(0.0f, 0.0f, 0.0f, 0.0f);
     Lighting.LightCount = 0;
   }
 

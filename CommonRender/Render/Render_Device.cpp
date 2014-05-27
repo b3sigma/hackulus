@@ -53,7 +53,8 @@ void LightingParams::Update(const Matrix4f& view,
     const Vector4f* SceneLightPos) {
   Version++;
   for (int i = 0; i < LightCount; i++) {
-    LightPos[i] = view.Transform(SceneLightPos[i]);
+    Vector3f& downCastLightPos = LightPos[i].asV3();
+    downCastLightPos = view.Transform(SceneLightPos[i].asV3());
   }
 }
 

@@ -3,7 +3,7 @@
 #include <Kernel/OVR_Alg.h>
 
 Player::Player(void)
-    : UserEyeHeight(1.8f), EyePos(7.7f, 1.8f, -1.0f), EyeYaw(YawInitial),
+    : UserEyeHeight(1.8f), EyePos(7.7f, 1.8f, -1.0f, 0.0f), EyeYaw(YawInitial),
       EyePitch(0), EyeRoll(0), LastSensorYaw(0),
       camera_(fd::Camera::LOOK) {
   GamepadMove = Vector3f(0);
@@ -65,11 +65,12 @@ void Player::HandleCollision(double dt,
     bool gotCollision = false;
     bool gotCollisionLeft = false;
     bool gotCollisionRight = false;
+    Vector3f& v3EyePos = EyePos.asV3();
 
     for (unsigned int i = 0; i < collisionModels->GetSize(); ++i) {
       // Checks for collisions at eye level, which should prevent us from
       // slipping under walls
-      if (collisionModels->At(i)->TestRay(EyePos, orientationVector,
+      if (collisionModels->At(i)->TestRay(v3EyePos, orientationVector,
           checkLengthForward, &collisionPlaneForward)) {
         gotCollision = true;
       }
@@ -77,14 +78,14 @@ void Player::HandleCollision(double dt,
       Matrix4f leftRotation = Matrix4f::RotationY(
           45 * (Math<float>::Pi / 180.0f));
       Vector3f leftVector = leftRotation.Transform(orientationVector);
-      if (collisionModels->At(i)->TestRay(EyePos, leftVector, checkLengthLeft,
+      if (collisionModels->At(i)->TestRay(v3EyePos, leftVector, checkLengthLeft,
           &collisionPlaneLeft)) {
         gotCollisionLeft = true;
       }
       Matrix4f rightRotation = Matrix4f::RotationY(
           -45 * (Math<float>::Pi / 180.0f));
       Vector3f rightVector = rightRotation.Transform(orientationVector);
-      if (collisionModels->At(i)->TestRay(EyePos, rightVector, checkLengthRight,
+      if (collisionModels->At(i)->TestRay(v3EyePos, rightVector, checkLengthRight,
           &collisionPlaneRight)) {
         gotCollisionRight = true;
       }
@@ -99,7 +100,7 @@ void Player::HandleCollision(double dt,
       // Make sure we aren't in a corner
       for (unsigned int j = 0; j < collisionModels->GetSize(); ++j) {
         if (collisionModels->At(j)->TestPoint(
-            EyePos - Vector3f(0.0f, RailHeight, 0.0f)
+            EyePos.asV3() - Vector3f(0.0f, RailHeight, 0.0f)
                 + (slideVector * (moveLength)))) {
           moveLength = 0;
         }
@@ -110,14 +111,14 @@ void Player::HandleCollision(double dt,
     }
     // Checks for collisions at foot level, which allows us to follow terrain
     orientationVector *= moveLength;
-    EyePos += orientationVector;
+    v3EyePos += orientationVector;
 
     Planef collisionPlaneDown;
     float finalDistanceDown = 10;
 
     for (unsigned int i = 0; i < groundCollisionModels->GetSize(); ++i) {
       float checkLengthDown = 10;
-      if (groundCollisionModels->At(i)->TestRay(EyePos,
+      if (groundCollisionModels->At(i)->TestRay(v3EyePos,
           Vector3f(0.0f, -1.0f, 0.0f), checkLengthDown, &collisionPlaneDown)) {
         finalDistanceDown = Alg::Min(finalDistanceDown, checkLengthDown);
       }
@@ -125,7 +126,7 @@ void Player::HandleCollision(double dt,
 
     // Maintain the minimum camera height
     if (UserEyeHeight - finalDistanceDown < 1.0f) {
-      EyePos.y += UserEyeHeight - finalDistanceDown;
+      v3EyePos.y += UserEyeHeight - finalDistanceDown;
     }
   }
 }

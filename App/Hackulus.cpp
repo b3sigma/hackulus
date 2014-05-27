@@ -19,6 +19,7 @@
 
 // Filename to be loaded by default, searching specified paths.
 //#define WORLDDEMO_ASSET_FILE  "Tuscany.xml"
+//#define WORLDDEMO_ASSET_FILE  "Tiny.xml"
 #define WORLDDEMO_ASSET_FILE  "Trivial.xml"
 #define WORLDDEMO_ASSET_PATH1 "Assets/Tuscany/"
 #define WORLDDEMO_ASSET_PATH2 "../Assets/Tuscany/"
@@ -1104,7 +1105,7 @@ void HackulusApp::OnIdle() {
 
   Vector3f eyeCenterInHeadFrame(0.0f, headBaseToEyeHeight,
       -headBaseToEyeProtrusion);
-  Vector3f shiftedEyePos = ThePlayer.EyePos
+  Vector3f shiftedEyePos = ThePlayer.EyePos.asV3()
       + rollPitchYaw.Transform(eyeCenterInHeadFrame);
   shiftedEyePos.y -= eyeCenterInHeadFrame.y; // Bring the head back down to original height
   View = Matrix4f::LookAtRH(shiftedEyePos, shiftedEyePos + forward, up);

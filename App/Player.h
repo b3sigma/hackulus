@@ -55,8 +55,8 @@ public:
   float UserEyeHeight;
 
   // Position and look. The following apply:
-  //Vector4f EyePos;
-  Vector3f EyePos;
+  Vector4f EyePos;
+  //Vector3f EyePos;
 
   // This is the current approach to eye positions
   // Leave it for now, but the right approach would seem to be to store a full 4d matrix for each eye.
