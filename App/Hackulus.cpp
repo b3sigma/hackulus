@@ -219,11 +219,10 @@ protected:
 HackulusApp::HackulusApp()
     : pRender(0), LastUpdate(0), LoadingState(LoadingState_Frame0),
     // Initial location
-    SConfig(), PostProcess(PostProcess_Distortion), DistortionClearColor(0, 0,
-        0),
-
-    ShiftDown(false), pAdjustFunc(0), AdjustDirection(1.0f), SceneMode(
-        Scene_World), TextScreen(Text_None) {
+    SConfig(), PostProcess(PostProcess_Distortion),
+    DistortionClearColor(0, 0, 0),
+    ShiftDown(false), pAdjustFunc(0), AdjustDirection(1.0f),
+    SceneMode(Scene_World), TextScreen(Text_None) {
   Width = 1280;
   Height = 800;
   Screen = 0;
