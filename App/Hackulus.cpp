@@ -1403,7 +1403,8 @@ void HackulusApp::PopulateScene(const char *fileName) {
   YawLinesScene.World.Add(yawLinesModel);
 
   fd::Mesh tesseract;
-  tesseract.buildTesseract(10.0f, fd::Vec4f(0,0,0,0), fd::Vec4f(0, 1, 2, 0));
+  tesseract.buildCube(1.0f, fd::Vec4f(0,0,0,0), fd::Vec4f(0, 0, 0, 0));
+//  tesseract.buildTesseract(10.0f, fd::Vec4f(0,0,0,0), fd::Vec4f(0,0,0,0)); // fd::Vec4f(0, 1, 2, 0));
   Ptr<Model> tesseractModel = *new Model(Prim_Triangles);
   // TODO: This is ugly inefficient, fix it.
   fd::Vec4f triA, triB, triC;
@@ -1415,13 +1416,18 @@ void HackulusApp::PopulateScene(const char *fileName) {
         tesseractModel->AddVertex(triC));
   }
   Ptr<ShaderFill> shader = *new ShaderFill(*pRender->CreateShaderSet());
+//  shader->GetShaders()->SetShader(
+//      pRender->LoadBuiltinShader(Shader_Vertex, VShader_FourToThree));
   shader->GetShaders()->SetShader(
-      pRender->LoadBuiltinShader(Shader_Vertex, VShader_FourToThree));
+      pRender->LoadBuiltinShader(Shader_Vertex, VShader_MVP));
+//  shader->GetShaders()->SetShader(
+//      pRender->LoadBuiltinShader(Shader_Fragment, FShader_Solid));
   shader->GetShaders()->SetShader(
-      pRender->LoadBuiltinShader(Shader_Fragment, FShader_Solid));
+      pRender->LoadBuiltinShader(Shader_Fragment, FShader_Debug));
   tesseractModel->Fill = shader;
 
   MainScene.World.Add(tesseractModel);
+  MainScene.Models.PushBack(tesseractModel);
 }
 
 void HackulusApp::PopulatePreloadScene() {

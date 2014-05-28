@@ -177,6 +177,12 @@ static const char* DirectVertexShaderSrc = "uniform mat4 View;\n"
     "   oNormal = vec3(View * vec4(Normal.xyz,0));\n"
     "}\n";
 
+static const char* DebugFragShaderSrc =
+    "void main()\n"
+    "{\n"
+    "   gl_FragColor = vec4(1.0,0.0,0.0,1.0);\n"
+    "}\n";
+
 static const char* SolidFragShaderSrc = "uniform vec4 Color;\n"
     "void main()\n"
     "{\n"
@@ -346,7 +352,8 @@ static const char* VShaderSrcs[VShader_Count] = { DirectVertexShaderSrc,
 static const char* FShaderSrcs[FShader_Count] = { SolidFragShaderSrc,
     GouraudFragShaderSrc, TextureFragShaderSrc, AlphaTextureFragShaderSrc,
     PostProcessFragShaderSrc, PostProcessFullFragShaderSrc,
-    LitSolidFragShaderSrc, LitTextureFragShaderSrc, MultiTextureFragShaderSrc };
+    LitSolidFragShaderSrc, LitTextureFragShaderSrc, MultiTextureFragShaderSrc,
+    DebugFragShaderSrc };
 
 RenderDevice::RenderDevice(const RendererParams&) {
   for (int i = 0; i < VShader_Count; i++)

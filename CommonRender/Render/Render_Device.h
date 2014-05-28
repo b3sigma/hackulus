@@ -76,7 +76,8 @@ enum BuiltinShaders {
   FShader_LitGouraud = 6,
   FShader_LitTexture = 7,
   FShader_MultiTexture = 8,
-  FShader_Count = 9,
+  FShader_Debug = 9,
+  FShader_Count = 10,
 };
 
 enum MapFlags {
@@ -647,7 +648,7 @@ public:
 public:
   void Render(RenderDevice* ren, const Matrix4f& view);
 
-  virtual void GetDebugString(char* str, UPInt destSize) const;
+  void GetDebugString(char* str, UPInt destSize) const;
 
   void SetAmbient(Color4f color) {
     Lighting.Ambient = color;
