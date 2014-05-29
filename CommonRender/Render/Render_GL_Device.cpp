@@ -383,8 +383,9 @@ Shader *RenderDevice::LoadBuiltinShader(ShaderStage stage, int shader) {
 
 void RenderDevice::BeginRendering() {
   glEnable(GL_DEPTH_TEST);
-  glEnable(GL_CULL_FACE);
-  glFrontFace(GL_CW);
+  //glEnable(GL_CULL_FACE);
+  //glFrontFace(GL_CW);
+  glDisable(GL_CULL_FACE);
 
   glLineWidth(3.0f);
   glEnable(GL_LINE_SMOOTH);

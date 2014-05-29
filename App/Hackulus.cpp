@@ -1181,7 +1181,8 @@ void HackulusApp::Render(const StereoEyeParams& stereo) {
   pRender->ApplyStereoParams(stereo);
   pRender->Clear();
 
-  pRender->SetDepthMode(true, true);
+  //pRender->SetDepthMode(true, true);
+  pRender->SetDepthMode(false, false);
   if (SceneMode != Scene_Grid) {
     MainScene.Render(pRender, stereo.ViewAdjust * View);
   }
@@ -1416,10 +1417,10 @@ void HackulusApp::PopulateScene(const char *fileName) {
         tesseractModel->AddVertex(triC));
   }
   Ptr<ShaderFill> shader = *new ShaderFill(*pRender->CreateShaderSet());
-//  shader->GetShaders()->SetShader(
-//      pRender->LoadBuiltinShader(Shader_Vertex, VShader_FourToThree));
   shader->GetShaders()->SetShader(
-      pRender->LoadBuiltinShader(Shader_Vertex, VShader_MVP));
+      pRender->LoadBuiltinShader(Shader_Vertex, VShader_FourToThree));
+//  shader->GetShaders()->SetShader(
+//      pRender->LoadBuiltinShader(Shader_Vertex, VShader_MVP));
 //  shader->GetShaders()->SetShader(
 //      pRender->LoadBuiltinShader(Shader_Fragment, FShader_Solid));
   shader->GetShaders()->SetShader(
