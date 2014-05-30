@@ -730,7 +730,7 @@ bool ShaderSet::Link() {
   if (!r) {
     GLchar msg[1024];
     glGetProgramInfoLog(Prog, sizeof(msg), 0, msg);
-    OVR_DEBUG_LOG(("Linking shaders failed: %s\n", msg));
+    LogError("Linking shaders failed: %s\n", msg);
     if (!r)
       return 0;
   }
@@ -837,7 +837,7 @@ bool ShaderSet::SetUniform(const char* name, int n, const float* v) {
       return 1;
     }
 
-  OVR_DEBUG_LOG(("Warning: uniform %s not present in selected shader", name));
+  LogError("Warning: uniform %s not present in selected shader", name);
   return 0;
 }
 

@@ -1181,8 +1181,8 @@ void HackulusApp::Render(const StereoEyeParams& stereo) {
   pRender->ApplyStereoParams(stereo);
   pRender->Clear();
 
-  //pRender->SetDepthMode(true, true);
-  pRender->SetDepthMode(false, false);
+  pRender->SetDepthMode(true, true);
+  //pRender->SetDepthMode(false, false);
   if (SceneMode != Scene_Grid) {
     MainScene.Render(pRender, stereo.ViewAdjust * View);
   }
@@ -1404,7 +1404,8 @@ void HackulusApp::PopulateScene(const char *fileName) {
   YawLinesScene.World.Add(yawLinesModel);
 
   fd::Mesh tesseract;
-  tesseract.buildCube(1.0f, fd::Vec4f(0,0,0,0), fd::Vec4f(0, 0, 0, 0));
+  Vector4f tesseractOrigin(1.0f,0,0,0);
+  tesseract.buildCube(1.0f, fd::Vec4f(0.05f,0.05f,0.05f,0.05f), fd::Vec4f(0, 0, 0, 0));
 //  tesseract.buildTesseract(10.0f, fd::Vec4f(0,0,0,0), fd::Vec4f(0,0,0,0)); // fd::Vec4f(0, 1, 2, 0));
   Ptr<Model> tesseractModel = *new Model(Prim_Triangles);
   // TODO: This is ugly inefficient, fix it.
@@ -1426,9 +1427,16 @@ void HackulusApp::PopulateScene(const char *fileName) {
   shader->GetShaders()->SetShader(
       pRender->LoadBuiltinShader(Shader_Fragment, FShader_Debug));
   tesseractModel->Fill = shader;
+  tesseractModel->SetPosition(tesseractOrigin.asV3());
 
   MainScene.World.Add(tesseractModel);
   MainScene.Models.PushBack(tesseractModel);
+
+  Ptr<Model> testGreenBox = *Model::CreateBox(Color(0, 255, 0, 255),
+      Vector3f(0.0f, 0.1f, 0.0f), Vector3f(1.0f, 1.0f, 1.0f));
+  MainScene.World.Add(testGreenBox);
+  MainScene.Models.PushBack(testGreenBox);
+
 }
 
 void HackulusApp::PopulatePreloadScene() {
