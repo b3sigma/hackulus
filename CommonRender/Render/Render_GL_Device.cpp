@@ -108,102 +108,114 @@ void InitGLExtensions()
 
 #endif
 
-static const char* StdVertexFourToThreeSrc =
-    "uniform mat4 WorldMat;\n"
-    "uniform vec4 WorldPos;\n"
-    "uniform vec4 CameraPos;\n"
-    "uniform mat4 CameraMatrix;\n"
-    "uniform mat4 Proj;\n"
-    "uniform mat4 FourToThree;\n"
-    "attribute vec4 Position;\n"
-    "attribute vec4 Color;\n"
-    ""
-    "varying vec3 oVPos;\n"
-    "varying vec4 oColor;\n"
-    "void main() {\n"
-    "  vec4 worldSpace = WorldMat * Position;\n"
-    "  worldSpace += WorldPos;\n"
-    "  vec4 cameraSpace = worldSpace - CameraPos;\n"
-    "  cameraSpace = CameraMatrix * cameraSpace;\n"
-    "  vec4 threeSpace = FourToThree * cameraSpace;\n"
-    "  float savedW = threeSpace.w;\n"
-    "  threeSpace.w = 1.0;\n"
-    "  oVPos = threeSpace.xyz;\n"
-    "  vec4 homogenous = Proj * threeSpace;\n"
-    "  gl_Position = homogenous;\n"
-    "  oColor.a = 0.2;\n"
-    "  oColor.g = Color.y;\n"
-    "  oColor.r = abs(savedW / 10.0);\n"
-    "  oColor.b = abs(threeSpace.x / 10.0);\n"
-    "  oColor.rgb = max(oColor.rgb, vec3(0,0,0));\n"
-    "  oColor.rgb += vec3(0.1,0.1,0.1);\n"
-    "}\n";
+static const char* StdVertexFourToThreeSrc = R"derp(
+    uniform mat4 WorldMat;
+    uniform vec4 WorldPos;
+    uniform vec4 CameraPos;
+    uniform mat4 CameraMatrix;
+    uniform mat4 Proj;
+    uniform mat4 FourToThree;
+    attribute vec4 Position;
+    attribute vec4 Color;
 
-static const char* StdVertexShaderSrc = "uniform mat4 Proj;\n"
-    "uniform mat4 View;\n"
-    "attribute vec4 Position;\n"
-    "attribute vec4 Normal;\n"
-    "attribute vec2 TexCoord;\n"
-    "attribute vec2 TexCoord1;\n"
-    "attribute vec4 Color;\n"
-    "varying  vec4 oColor;\n"
-    "varying  vec2 oTexCoord;\n"
-    "varying  vec2 oTexCoord1;\n"
-    "varying  vec3 oNormal;\n"
-    "varying  vec3 oVPos;\n"
-    "void main()\n"
-    "{\n"
-    "   gl_Position = Proj * (View * Position);\n"
-    "   oNormal = vec3(View * vec4(Normal.xyz,0));\n"
-    "   oVPos = vec3(View * Position);\n"
-    "   oTexCoord = TexCoord;\n"
-    "   oTexCoord1 = TexCoord1;\n"
-    "   oColor = Color;\n"
-    "}\n";
+    varying vec3 oVPos;
+    varying vec4 oColor;
+    void main() {
+      vec4 worldSpace = WorldMat * Position;
+      worldSpace += WorldPos;
+      vec4 cameraSpace = worldSpace - CameraPos;
+      cameraSpace = CameraMatrix * cameraSpace;
+      vec4 threeSpace = FourToThree * cameraSpace;
+      float savedW = threeSpace.w;
+      threeSpace.w = 1.0;
+      oVPos = threeSpace.xyz;
+      vec4 homogenous = Proj * threeSpace;
+      gl_Position = homogenous;
+      oColor.a = 0.2;
+      oColor.g = Color.y;
+      oColor.r = abs(savedW / 10.0);
+      oColor.b = abs(threeSpace.x / 10.0);
+      oColor.rgb = max(oColor.rgb, vec3(0,0,0));
+      oColor.rgb += vec3(0.1,0.1,0.1);
+    }
+)derp";
 
-static const char* DirectVertexShaderSrc = "uniform mat4 View;\n"
-    "attribute vec4 Position;\n"
-    "attribute vec4 Normal;\n"
-    "attribute vec2 TexCoord;\n"
-    "attribute vec4 Color;\n"
-    "varying  vec4 oColor;\n"
-    "varying  vec2 oTexCoord;\n"
-    "varying  vec3 oNormal;\n"
-    "void main()\n"
-    "{\n"
-    "   gl_Position = View * Position;\n"
-    "   oTexCoord = TexCoord;\n"
-    "   oColor = Color;\n"
-    "   oNormal = vec3(View * vec4(Normal.xyz,0));\n"
-    "}\n";
+static const char* StdVertexShaderSrc = R"derp(
+    uniform mat4 Proj;
+    uniform mat4 View;
+    attribute vec4 Position;
+    attribute vec4 Normal;
+    attribute vec2 TexCoord;
+    attribute vec2 TexCoord1;
+    attribute vec4 Color;
+    varying  vec4 oColor;
+    varying  vec2 oTexCoord;
+    varying  vec2 oTexCoord1;
+    varying  vec3 oNormal;
+    varying  vec3 oVPos;
+    void main()
+    {
+       gl_Position = Proj * (View * Position);
+       oNormal = vec3(View * vec4(Normal.xyz,0));
+       oVPos = vec3(View * Position);
+       oTexCoord = TexCoord;
+       oTexCoord1 = TexCoord1;
+       oColor = Color;
+    }
+)derp";
 
-static const char* DebugFragShaderSrc =
-    "void main()\n"
-    "{\n"
-    "   gl_FragColor = vec4(1.0,0.0,0.0,1.0);\n"
-    "}\n";
+static const char* DirectVertexShaderSrc = R"derp(
+    uniform mat4 View;
+    attribute vec4 Position;
+    attribute vec4 Normal;
+    attribute vec2 TexCoord;
+    attribute vec4 Color;
+    varying  vec4 oColor;
+    varying  vec2 oTexCoord;
+    varying  vec3 oNormal;
+    void main()
+    {
+       gl_Position = View * Position;
+       oTexCoord = TexCoord;
+       oColor = Color;
+       oNormal = vec3(View * vec4(Normal.xyz,0));
+    }
+)derp";
 
-static const char* SolidFragShaderSrc = "uniform vec4 Color;\n"
-    "void main()\n"
-    "{\n"
-    "   gl_FragColor = Color;\n"
-    "}\n";
+static const char* DebugFragShaderSrc = R"derp(
+    void main()
+    {
+       gl_FragColor = vec4(1.0,0.0,0.0,1.0);
+    }
+)derp";
 
-static const char* GouraudFragShaderSrc = "varying vec4 oColor;\n"
-    "void main()\n"
-    "{\n"
-    "   gl_FragColor = oColor;\n"
-    "}\n";
+static const char* SolidFragShaderSrc = R"derp(
+    uniform vec4 Color;
+    void main()
+    {
+       gl_FragColor = Color;
+    }
+)derp";
 
-static const char* TextureFragShaderSrc = "uniform sampler2D Texture0;\n"
-    "varying vec4 oColor;\n"
-    "varying vec2 oTexCoord;\n"
-    "void main()\n"
-    "{\n"
-    "   gl_FragColor = oColor * texture2D(Texture0, oTexCoord);\n"
-    "   if (gl_FragColor.a < 0.4)\n"
-    "       discard;\n"
-    "}\n";
+static const char* GouraudFragShaderSrc = R"derp(
+    varying vec4 oColor;
+    void main()
+    {
+       gl_FragColor = oColor;
+    }
+)derp";
+
+static const char* TextureFragShaderSrc = R"derp(
+    uniform sampler2D Texture0;
+    varying vec4 oColor;
+    varying vec2 oTexCoord;
+    void main()
+    {
+       gl_FragColor = oColor * texture2D(Texture0, oTexCoord);
+       if (gl_FragColor.a < 0.4)
+           discard;
+    }
+)derp";
 
 #define LIGHTING_COMMON                                                 \
     "uniform   vec3 Ambient;\n"                                               \
@@ -229,123 +241,136 @@ static const char* TextureFragShaderSrc = "uniform sampler2D Texture0;\n"
     "}\n"
 
 static const char* LitSolidFragShaderSrc = LIGHTING_COMMON
-"void main()\n"
-"{\n"
-"   gl_FragColor = DoLight() * oColor;\n"
-"}\n";
+    R"derp(
+void main()
+{
+   gl_FragColor = DoLight() * oColor;
+}
+)derp";
 
-static const char* LitTextureFragShaderSrc = "uniform sampler2D Texture0;\n"
-LIGHTING_COMMON
-"void main()\n"
-"{\n"
-"   gl_FragColor = DoLight() * texture2D(Texture0, oTexCoord);\n"
-"}\n";
+static const char* LitTextureFragShaderSrc = LIGHTING_COMMON
+    R"derp(
+    uniform sampler2D Texture0;
+void main()
+{
+   gl_FragColor = DoLight() * texture2D(Texture0, oTexCoord);
+}
+)derp";
 
-static const char* AlphaTextureFragShaderSrc = "uniform sampler2D Texture0;\n"
-    "varying vec4 oColor;\n"
-    "varying vec2 oTexCoord;\n"
-    "void main()\n"
-    "{\n"
-    "   gl_FragColor = oColor * vec4(1,1,1,texture2D(Texture0, oTexCoord).a);\n"
-    "}\n";
+static const char* AlphaTextureFragShaderSrc = R"derp(
+    uniform sampler2D Texture0;
+    varying vec4 oColor;
+    varying vec2 oTexCoord;
+    void main()
+    {
+       gl_FragColor = oColor * vec4(1,1,1,texture2D(Texture0, oTexCoord).a);
+    }
+)derp";
 
-static const char* MultiTextureFragShaderSrc =
-    "uniform sampler2D Texture0;\n"
-        "uniform sampler2D Texture1;\n"
-        "varying vec4 oColor;\n"
-        "varying vec2 oTexCoord;\n"
-        "varying vec2 oTexCoord1;\n"
-        "void main()\n"
-        "{\n"
-        "	vec4 color1 = texture2D(Texture0, oTexCoord);\n"
-        "	vec4 color2 = texture2D(Texture1, oTexCoord1);\n"
-        "	color2.rgb = color2.rgb * mix(1.9, 1.2, clamp(length(color2.rgb),0.0,1.0));\n"
-        "	color2 = color1 * color2;\n"
-        "   if (color2.a <= 0.6)\n"
-        "		discard;\n"
-        "	gl_FragColor = color2;\n"
-        "}\n";
+static const char* MultiTextureFragShaderSrc = R"derp(
+    uniform sampler2D Texture0;
+        uniform sampler2D Texture1;
+        varying vec4 oColor;
+        varying vec2 oTexCoord;
+        varying vec2 oTexCoord1;
+        void main()
+        {
+        	vec4 color1 = texture2D(Texture0, oTexCoord);
+        	vec4 color2 = texture2D(Texture1, oTexCoord1);
+        	color2.rgb = color2.rgb * mix(1.9, 1.2, clamp(length(color2.rgb),0.0,1.0));
+        	color2 = color1 * color2;
+           if (color2.a <= 0.6)
+        		discard;
+        	gl_FragColor = color2;
+        }
+)derp";
 
-static const char* PostProcessVertexShaderSrc = "uniform mat4 View;\n"
-    "uniform mat4 Texm;\n"
-    "attribute vec4 Position;\n"
-    "attribute vec2 TexCoord;\n"
-    "varying  vec2 oTexCoord;\n"
-    "void main()\n"
-    "{\n"
-    "   gl_Position = View * Position;\n"
-    "   oTexCoord = vec2(Texm * vec4(TexCoord,0,1));\n"
-    "   oTexCoord.y = 1.0-oTexCoord.y;\n"
-    "}\n";
+static const char* PostProcessVertexShaderSrc = R"derp(
+    uniform mat4 View;
+    uniform mat4 Texm;
+    attribute vec4 Position;
+    attribute vec2 TexCoord;
+    varying  vec2 oTexCoord;
+    void main()
+    {
+       gl_Position = View * Position;
+       oTexCoord = vec2(Texm * vec4(TexCoord,0,1));
+       oTexCoord.y = 1.0-oTexCoord.y;
+    }
+)derp";
 
-static const char* PostProcessFragShaderSrc = "uniform vec2 LensCenter;\n"
-    "uniform vec2 ScreenCenter;\n"
-    "uniform vec2 Scale;\n"
-    "uniform vec2 ScaleIn;\n"
-    "uniform vec4 HmdWarpParam;\n"
-    "uniform sampler2D Texture0;\n"
-    "varying vec2 oTexCoord;\n"
-    "\n"
-    "vec2 HmdWarp(vec2 in01)\n"
-    "{\n"
-    "   vec2  theta = (in01 - LensCenter) * ScaleIn;\n" // Scales to [-1, 1]
-    "   float rSq = theta.x * theta.x + theta.y * theta.y;\n"
-    "   vec2  theta1 = theta * (HmdWarpParam.x + HmdWarpParam.y * rSq + "
-    "                           HmdWarpParam.z * rSq * rSq + HmdWarpParam.w * rSq * rSq * rSq);\n"
-    "   return LensCenter + Scale * theta1;\n"
-    "}\n"
-    "void main()\n"
-    "{\n"
-    "   vec2 tc = HmdWarp(oTexCoord);\n"
-    "   if (!all(equal(clamp(tc, ScreenCenter-vec2(0.25,0.5), ScreenCenter+vec2(0.25,0.5)), tc)))\n"
-    "       gl_FragColor = vec4(0);\n"
-    "   else\n"
-    "       gl_FragColor = texture2D(Texture0, tc);\n"
-    "}\n";
+static const char* PostProcessFragShaderSrc = R"derp(
+    uniform vec2 LensCenter;
+    uniform vec2 ScreenCenter;
+    uniform vec2 Scale;
+    uniform vec2 ScaleIn;
+    uniform vec4 HmdWarpParam;
+    uniform sampler2D Texture0;
+    varying vec2 oTexCoord;
+    
+    vec2 HmdWarp(vec2 in01)
+    {
+       vec2  theta = (in01 - LensCenter) * ScaleIn; // Scales to [-1, 1]
+       float rSq = theta.x * theta.x + theta.y * theta.y;
+       vec2  theta1 = theta * (HmdWarpParam.x + HmdWarpParam.y * rSq + 
+                               HmdWarpParam.z * rSq * rSq + HmdWarpParam.w * rSq * rSq * rSq);
+       return LensCenter + Scale * theta1;
+    }
+    void main()
+    {
+       vec2 tc = HmdWarp(oTexCoord);
+       if (!all(equal(clamp(tc, ScreenCenter-vec2(0.25,0.5), ScreenCenter+vec2(0.25,0.5)), tc)))
+           gl_FragColor = vec4(0);
+       else
+           gl_FragColor = texture2D(Texture0, tc);
+    }
+)derp";
 
 // Shader with lens distortion and chromatic aberration correction.
-static const char* PostProcessFullFragShaderSrc = "uniform vec2 LensCenter;\n"
-    "uniform vec2 ScreenCenter;\n"
-    "uniform vec2 Scale;\n"
-    "uniform vec2 ScaleIn;\n"
-    "uniform vec4 HmdWarpParam;\n"
-    "uniform vec4 ChromAbParam;\n"
-    "uniform sampler2D Texture0;\n"
-    "varying vec2 oTexCoord;\n"
-    "\n"
+static const char* PostProcessFullFragShaderSrc = R"derp(
+    uniform vec2 LensCenter;
+    uniform vec2 ScreenCenter;
+    uniform vec2 Scale;
+    uniform vec2 ScaleIn;
+    uniform vec4 HmdWarpParam;
+    uniform vec4 ChromAbParam;
+    uniform sampler2D Texture0;
+    varying vec2 oTexCoord;
+    
     // Scales input texture coordinates for distortion.
     // ScaleIn maps texture coordinates to Scales to ([-1, 1]), although top/bottom will be
     // larger due to aspect ratio.
-    "void main()\n"
-    "{\n"
-    "   vec2  theta = (oTexCoord - LensCenter) * ScaleIn;\n"// Scales to [-1, 1]
-    "   float rSq= theta.x * theta.x + theta.y * theta.y;\n"
-    "   vec2  theta1 = theta * (HmdWarpParam.x + HmdWarpParam.y * rSq + "
-    "                  HmdWarpParam.z * rSq * rSq + HmdWarpParam.w * rSq * rSq * rSq);\n"
-    "   \n"
-    "   // Detect whether blue texture coordinates are out of range since these will scaled out the furthest.\n"
-    "   vec2 thetaBlue = theta1 * (ChromAbParam.z + ChromAbParam.w * rSq);\n"
-    "   vec2 tcBlue = LensCenter + Scale * thetaBlue;\n"
-    "   if (!all(equal(clamp(tcBlue, ScreenCenter-vec2(0.25,0.5), ScreenCenter+vec2(0.25,0.5)), tcBlue)))\n"
-    "   {\n"
-    "       gl_FragColor = vec4(0);\n"
-    "       return;\n"
-    "   }\n"
-    "   \n"
-    "   // Now do blue texture lookup.\n"
-    "   float blue = texture2D(Texture0, tcBlue).b;\n"
-    "   \n"
-    "   // Do green lookup (no scaling).\n"
-    "   vec2  tcGreen = LensCenter + Scale * theta1;\n"
-    "   vec4  center = texture2D(Texture0, tcGreen);\n"
-    "   \n"
-    "   // Do red scale and lookup.\n"
-    "   vec2  thetaRed = theta1 * (ChromAbParam.x + ChromAbParam.y * rSq);\n"
-    "   vec2  tcRed = LensCenter + Scale * thetaRed;\n"
-    "   float red = texture2D(Texture0, tcRed).r;\n"
-    "   \n"
-    "   gl_FragColor = vec4(red, center.g, blue, center.a);\n"
-    "}\n";
+    void main()
+    {
+       vec2  theta = (oTexCoord - LensCenter) * ScaleIn; // Scales to [-1, 1]
+       float rSq= theta.x * theta.x + theta.y * theta.y;
+       vec2  theta1 = theta * (HmdWarpParam.x + HmdWarpParam.y * rSq + 
+                      HmdWarpParam.z * rSq * rSq + HmdWarpParam.w * rSq * rSq * rSq);
+       
+       // Detect whether blue texture coordinates are out of range since these will scaled out the furthest.
+       vec2 thetaBlue = theta1 * (ChromAbParam.z + ChromAbParam.w * rSq);
+       vec2 tcBlue = LensCenter + Scale * thetaBlue;
+       if (!all(equal(clamp(tcBlue, ScreenCenter-vec2(0.25,0.5), ScreenCenter+vec2(0.25,0.5)), tcBlue)))
+       {
+           gl_FragColor = vec4(0);
+           return;
+       }
+       
+       // Now do blue texture lookup.
+       float blue = texture2D(Texture0, tcBlue).b;
+       
+       // Do green lookup (no scaling).
+       vec2  tcGreen = LensCenter + Scale * theta1;
+       vec4  center = texture2D(Texture0, tcGreen);
+       
+       // Do red scale and lookup.
+       vec2  thetaRed = theta1 * (ChromAbParam.x + ChromAbParam.y * rSq);
+       vec2  tcRed = LensCenter + Scale * thetaRed;
+       float red = texture2D(Texture0, tcRed).r;
+       
+       gl_FragColor = vec4(red, center.g, blue, center.a);
+    }
+)derp";
 
 static const char* VShaderSrcs[VShader_Count] = { DirectVertexShaderSrc,
     StdVertexShaderSrc, PostProcessVertexShaderSrc, StdVertexFourToThreeSrc};
