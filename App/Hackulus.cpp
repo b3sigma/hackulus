@@ -1417,10 +1417,10 @@ void HackulusApp::PopulateScene(const char *fileName) {
         tesseractModel->AddVertex(triC));
   }
   Ptr<ShaderFill> shader = *new ShaderFill(*pRender->CreateShaderSet());
-  shader->GetShaders()->SetShader(
-      pRender->LoadBuiltinShader(Shader_Vertex, VShader_FourToThree));
 //  shader->GetShaders()->SetShader(
-//      pRender->LoadBuiltinShader(Shader_Vertex, VShader_MVP));
+//      pRender->LoadBuiltinShader(Shader_Vertex, VShader_FourToThree));
+  shader->GetShaders()->SetShader(
+      pRender->LoadBuiltinShader(Shader_Vertex, VShader_MVP));
 //  shader->GetShaders()->SetShader(
 //      pRender->LoadBuiltinShader(Shader_Fragment, FShader_Solid));
   shader->GetShaders()->SetShader(
