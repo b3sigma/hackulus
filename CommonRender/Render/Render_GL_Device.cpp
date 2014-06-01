@@ -520,7 +520,7 @@ Fill* RenderDevice::CreateSimpleFill(int flags) {
   return DefaultFill;
 }
 
-void RenderDevice::Render(const Matrix4f& matrix, Model* model) {
+void RenderDevice::Render(const Matrix4f& matrix, Model* model, const ViewMatrices* fullView) {
   // Store data in buffers if not already
   if (!model->VertexBuffer) {
     Ptr<Render::Buffer> vb = *CreateBuffer();
@@ -541,7 +541,7 @@ void RenderDevice::Render(const Matrix4f& matrix, Model* model) {
 
 void RenderDevice::Render(const Fill* fill, Render::Buffer* vertices,
     Render::Buffer* indices, const Matrix4f& matrix, int offset, int count,
-    PrimitiveType rprim) {
+    PrimitiveType rprim, const ViewMatrices* fullView) {
   ShaderSet* shaders = (ShaderSet*) ((ShaderFill*) fill)->GetShaders();
 
   GLenum prim;
@@ -579,16 +579,16 @@ void RenderDevice::Render(const Fill* fill, Render::Buffer* vertices,
     glUniform4fv(shaders->WorldPosLoc, 1, zero.raw());
   }
 
-  if (shaders->CameraPosLoc >= 0) {
-    glUniform4fv(shaders->CameraPosLoc, 1, zero.raw());
+  if (fullView && shaders->CameraPosLoc >= 0) {
+    glUniform4fv(shaders->CameraPosLoc, 1, fullView->CameraPos.raw());
   }
 
-  if (shaders->CameraMatrixLoc >= 0) {
-    glUniformMatrix4fv(shaders->CameraMatrixLoc, 1, false, iden.raw());
+  if (fullView && shaders->CameraMatrixLoc >= 0) {
+    glUniformMatrix4fv(shaders->CameraMatrixLoc, 1, false, fullView->CameraView.raw());
   }
 
-  if (shaders->FourToThreeLoc >= 0) {
-    glUniformMatrix4fv(shaders->FourToThreeLoc, 1, false, iden.raw());
+  if (fullView && shaders->FourToThreeLoc >= 0) {
+    glUniformMatrix4fv(shaders->FourToThreeLoc, 1, false, fullView->FourToThree.raw());
   }
 
   if (shaders->UsesLighting && Lighting->Version != shaders->LightingVer) {
@@ -630,7 +630,7 @@ void RenderDevice::Render(const Fill* fill, Render::Buffer* vertices,
 
 void RenderDevice::RenderWithAlpha(const Fill* fill, Render::Buffer* vertices,
     Render::Buffer* indices, const Matrix4f& matrix, int offset, int count,
-    PrimitiveType rprim) {
+    PrimitiveType rprim, const ViewMatrices* fullView) {
   //glEnable(GL_BLEND);
   Render(fill, vertices, indices, matrix, offset, count, rprim);
   //glDisable(GL_BLEND);

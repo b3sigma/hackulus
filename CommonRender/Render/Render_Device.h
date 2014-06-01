@@ -146,6 +146,15 @@ struct Vector4f : public fd::Vec4f {
   const Vector3f& asV3() const { return *((const Vector3f*)this->raw()); }
 };
 
+// Ugh, since we are in OVR namespace Matrix4f is already taken
+// The hackneyed approach of this project is being manifest.
+class Matrix4 : public fd::Mat4f {
+public:
+  Matrix4() : fd::Mat4f() {}
+  Matrix4(const Matrix4& m) : fd::Mat4f(m) {}
+  // What are the odds that the column vs row alignment is what you expect here?
+  Matrix4(const OVR::Matrix4f& m) : fd::Mat4f(&m.M[0][0]) {}
+};
 
 struct Color4f: public Vector3f {
   float w;
@@ -343,6 +352,13 @@ public:
 
 //-----------------------------------------------------------------------------------
 
+struct ViewMatrices {
+  Matrix4f View;
+  Matrix4 CameraView;
+  Vector4f CameraPos;
+  Matrix4 FourToThree;
+};
+
 class CollisionModel: public RefCountBase<CollisionModel> {
 public:
   Array<Planef> Planes;
@@ -422,8 +438,8 @@ public:
     return Mat;
   }
 
-  virtual void Render(const Matrix4f& ltw, RenderDevice* ren) {
-    OVR_UNUSED2(ltw, ren);
+  virtual void Render(const Matrix4f& ltw, RenderDevice* ren, const ViewMatrices* fullView) {
+    OVR_UNUSED3(ltw, ren, fullView);
   }
 };
 
@@ -504,7 +520,7 @@ public:
     return Node_Model;
   }
 
-  virtual void Render(const Matrix4f& ltw, RenderDevice* ren);
+  virtual void Render(const Matrix4f& ltw, RenderDevice* ren, const ViewMatrices* fullView);
 
   PrimitiveType GetPrimType() const {
     return Type;
@@ -615,7 +631,7 @@ public:
     return Nodes.GetSize();
   }
 
-  virtual void Render(const Matrix4f& ltw, RenderDevice* ren);
+  virtual void Render(const Matrix4f& ltw, RenderDevice* ren, const ViewMatrices* fullView);
 
   void Add(Node *n) {
     Nodes.PushBack(n);
@@ -646,7 +662,7 @@ public:
   Array<Ptr<Model> > Models;
 
 public:
-  void Render(RenderDevice* ren, const Matrix4f& view);
+  void Render(RenderDevice* ren, const Matrix4f& view, const ViewMatrices* fullView);
 
   void GetDebugString(char* str, UPInt destSize) const;
 
@@ -902,14 +918,14 @@ public:
   }
 
   // This is a View matrix only, it will be combined with the projection matrix from SetProjection
-  virtual void Render(const Matrix4f& matrix, Model* model) = 0;
+  virtual void Render(const Matrix4f& matrix, Model* model, const ViewMatrices* fullView) = 0;
   // offset is in bytes; indices can be null.
   virtual void Render(const Fill* fill, Buffer* vertices, Buffer* indices,
       const Matrix4f& matrix, int offset, int count, PrimitiveType prim =
-          Prim_Triangles) = 0;
+          Prim_Triangles, const ViewMatrices* fullView = NULL) = 0;
   virtual void RenderWithAlpha(const Fill* fill, Render::Buffer* vertices,
       Render::Buffer* indices, const Matrix4f& matrix, int offset, int count,
-      PrimitiveType prim = Prim_Triangles) = 0;
+      PrimitiveType prim = Prim_Triangles, const ViewMatrices* fullView = NULL) = 0;
 
   // Returns width of text in same units as drawing. If strsize is not null, stores width and height.
   float MeasureText(const Font* font, const char* str, float size,

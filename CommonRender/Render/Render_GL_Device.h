@@ -263,13 +263,13 @@ public:
 
   virtual void SetLighting(const LightingParams* lt);
 
-  virtual void Render(const Matrix4f& matrix, Model* model);
+  virtual void Render(const Matrix4f& matrix, Model* model, const ViewMatrices* fullView) override;
   virtual void Render(const Fill* fill, Render::Buffer* vertices,
       Render::Buffer* indices, const Matrix4f& matrix, int offset, int count,
-      PrimitiveType prim = Prim_Triangles);
+      PrimitiveType prim = Prim_Triangles, const ViewMatrices* fullView = NULL) override;
   virtual void RenderWithAlpha(const Fill* fill, Render::Buffer* vertices,
       Render::Buffer* indices, const Matrix4f& matrix, int offset, int count,
-      PrimitiveType prim = Prim_Triangles);
+      PrimitiveType prim = Prim_Triangles, const ViewMatrices* fullView = NULL) override;
 
   virtual Buffer* CreateBuffer();
   virtual Texture* CreateTexture(int format, int width, int height,

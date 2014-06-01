@@ -29,9 +29,6 @@
 using namespace OVR;
 using namespace OVR::Platform;
 using namespace OVR::Render;
-
-// Important Oculus-specific logic can be found at following locations:
-//
 //  HackulusApp::OnStartup - This function will initialize OVR::DeviceManager and HMD,
 //                                    creating SensorDevice and attaching it to SensorFusion.
 //                                    This needs to be done before obtaining sensor data.
@@ -140,6 +137,7 @@ protected:
   // Player
   Player ThePlayer;
   Matrix4f View;
+  ViewMatrices FullView;
   Scene MainScene;
   Scene LoadingScene;
   Scene GridScene;
@@ -1184,7 +1182,11 @@ void HackulusApp::Render(const StereoEyeParams& stereo) {
   pRender->SetDepthMode(true, true);
   //pRender->SetDepthMode(false, false);
   if (SceneMode != Scene_Grid) {
-    MainScene.Render(pRender, stereo.ViewAdjust * View);
+    FullView.View = stereo.ViewAdjust * View;
+    FullView.CameraView = FullView.View;
+    FullView.CameraView.splice3dInto4d(FullView.CameraView, FullView.CameraPos);
+    FullView.FourToThree.storeIdentity();
+    MainScene.Render(pRender, stereo.ViewAdjust * View, &FullView);
   }
 
   if (SceneMode == Scene_YawView) {
@@ -1192,7 +1194,7 @@ void HackulusApp::Render(const StereoEyeParams& stereo) {
         * Matrix4f::RotationX(ThePlayer.EyePitch)
         * Matrix4f::RotationZ(ThePlayer.EyeRoll);
     YawLinesScene.Render(pRender,
-        stereo.ViewAdjust * trackerOnlyOrient.Inverted());
+        stereo.ViewAdjust * trackerOnlyOrient.Inverted(), NULL /* fullView */);
     //YawMarkRedScene.Render(pRender, stereo.ViewAdjust);
   }
 
@@ -1207,13 +1209,13 @@ void HackulusApp::Render(const StereoEyeParams& stereo) {
   float textHeight = unitPixel * 22;
 
   if ((SceneMode == Scene_Grid) || (SceneMode == Scene_Both)) { // Draw grid two pixels thick.
-    GridScene.Render(pRender, Matrix4f());
-    GridScene.Render(pRender, Matrix4f::Translation(unitPixel, unitPixel, 0));
+    GridScene.Render(pRender, Matrix4f(), NULL /* fullView */);
+    GridScene.Render(pRender, Matrix4f::Translation(unitPixel, unitPixel, 0), NULL /* fullView */);
   }
 
   // Display Loading screen-shot in frame 0.
   if (LoadingState != LoadingState_Finished) {
-    LoadingScene.Render(pRender, Matrix4f());
+    LoadingScene.Render(pRender, Matrix4f(), NULL /* fullView */);
     String loadMessage = String("Loading ") + MainFilePath;
     DrawTextBox(pRender, 0.0f, 0.0f, textHeight, loadMessage.ToCStr(),
         DrawText_HCenter);
@@ -1403,6 +1405,20 @@ void HackulusApp::PopulateScene(const char *fileName) {
   yawLinesModel->SetPosition(Vector3f(0.0f, -1.2f, 0.0f));
   YawLinesScene.World.Add(yawLinesModel);
 
+  Ptr<Model> testGreenBox = *Model::CreateBox(Color(0, 255, 0, 255),
+      Vector3f(0.0f, 0.1f, 0.0f), Vector3f(1.0f, 1.0f, 1.0f));
+  Ptr<ShaderFill> consistencyTestShader = *new ShaderFill(*pRender->CreateShaderSet());
+  consistencyTestShader->GetShaders()->SetShader(
+      pRender->LoadBuiltinShader(Shader_Vertex, VShader_MVP));
+//  consistencyTestShader->GetShaders()->SetShader(
+//      pRender->LoadBuiltinShader(Shader_Fragment, FShader_Solid));
+  consistencyTestShader->GetShaders()->SetShader(
+      pRender->LoadBuiltinShader(Shader_Fragment, FShader_Debug));
+  testGreenBox->Fill = consistencyTestShader;
+  MainScene.World.Add(testGreenBox);
+  MainScene.Models.PushBack(testGreenBox);
+
+
   fd::Mesh tesseract;
   Vector4f tesseractOrigin(1.0f,0,0,0);
   tesseract.buildCube(1.0f, fd::Vec4f(0.05f,0.05f,0.05f,0.05f), fd::Vec4f(0, 0, 0, 0));
@@ -1431,12 +1447,6 @@ void HackulusApp::PopulateScene(const char *fileName) {
 
   MainScene.World.Add(tesseractModel);
   MainScene.Models.PushBack(tesseractModel);
-
-  Ptr<Model> testGreenBox = *Model::CreateBox(Color(0, 255, 0, 255),
-      Vector3f(0.0f, 0.1f, 0.0f), Vector3f(1.0f, 1.0f, 1.0f));
-  MainScene.World.Add(testGreenBox);
-  MainScene.Models.PushBack(testGreenBox);
-
 }
 
 void HackulusApp::PopulatePreloadScene() {

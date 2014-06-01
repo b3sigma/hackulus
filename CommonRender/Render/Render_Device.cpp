@@ -6,17 +6,17 @@
 namespace OVR {
 namespace Render {
 
-void Model::Render(const Matrix4f& ltw, RenderDevice* ren) {
+void Model::Render(const Matrix4f& ltw, RenderDevice* ren, const ViewMatrices* fullView) {
   if (Visible) {
     Matrix4f m = ltw * GetMatrix();
-    ren->Render(m, this);
+    ren->Render(m, this, fullView);
   }
 }
 
-void Container::Render(const Matrix4f& ltw, RenderDevice* ren) {
+void Container::Render(const Matrix4f& ltw, RenderDevice* ren, const ViewMatrices* fullView) {
   Matrix4f m = ltw * GetMatrix();
   for (unsigned i = 0; i < Nodes.GetSize(); i++) {
-    Nodes[i]->Render(m, ren);
+    Nodes[i]->Render(m, ren, fullView);
   }
 }
 
@@ -40,12 +40,12 @@ void Scene::GetDebugString(char* str, UPInt destSize) const {
 }
 
 
-void Scene::Render(RenderDevice* ren, const Matrix4f& view) {
+void Scene::Render(RenderDevice* ren, const Matrix4f& view, const ViewMatrices* fullView) {
   Lighting.Update(view, LightPos);
 
   ren->SetLighting(&Lighting);
 
-  World.Render(view, ren);
+  World.Render(view, ren, fullView);
 }
 
 UInt16 CubeIndices[] = { 0, 1, 3, 3, 1, 2,
@@ -575,7 +575,7 @@ void RenderDevice::RenderText(const Font* font, const char* str, float x,
 
   pTextVertexBuffer->Unmap(vertices);
 
-  Render(font->fill, pTextVertexBuffer, NULL, m, 0, ivertex, Prim_Triangles);
+  Render(font->fill, pTextVertexBuffer, NULL, m, 0, ivertex, Prim_Triangles, NULL /* fullView */);
 }
 
 void RenderDevice::FillRect(float left, float top, float right, float bottom,
@@ -606,7 +606,7 @@ void RenderDevice::FillRect(float left, float top, float right, float bottom,
 
   pTextVertexBuffer->Unmap(vertices);
 
-  Render(fill, pTextVertexBuffer, NULL, Matrix4f(), 0, 6, Prim_Triangles);
+  Render(fill, pTextVertexBuffer, NULL, Matrix4f(), 0, 6, Prim_Triangles, NULL /* fullView */);
 }
 
 void RenderDevice::FillGradientRect(float left, float top, float right,
@@ -637,7 +637,7 @@ void RenderDevice::FillGradientRect(float left, float top, float right,
 
   pTextVertexBuffer->Unmap(vertices);
 
-  Render(fill, pTextVertexBuffer, NULL, Matrix4f(), 0, 6, Prim_Triangles);
+  Render(fill, pTextVertexBuffer, NULL, Matrix4f(), 0, 6, Prim_Triangles, NULL /* fullView */);
 }
 
 void RenderDevice::RenderImage(float left, float top, float right, float bottom,
@@ -681,7 +681,7 @@ void RenderDevice::RenderImage(float left, float top, float right, float bottom,
   m->AddTriangle(0, 3, 2);
   m->Fill = image;
 
-  Render(Matrix4f(), m);
+  Render(Matrix4f(), m, NULL /* fullView */);
 }
 
 /*
