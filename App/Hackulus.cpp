@@ -480,13 +480,183 @@ void HackulusApp::OnMouseMove(int x, int y, int modifiers) {
 void HackulusApp::OnKey(OVR::KeyCode key, int chr, bool down, int modifiers) {
   OVR_UNUSED(chr);
 
-  switch (key) {
-    case Key_Q:
-      if (down && (modifiers & Mod_Control)) {
-        pPlatform->Exit(0);
-      }
-      break;
+  if (modifiers & Mod_Control) {
+    switch (key) {
+      case Key_Q:
+        if (down) {
+          pPlatform->Exit(0);
+        } break;
+      default:
+        break;
+    }
+    return;
+  }
 
+  if (modifiers & Mod_Alt) {
+    switch (key) {
+      case Key_B:
+        if (down) {
+          if (SConfig.GetDistortionScale() == 1.0f) {
+            if (SConfig.GetHMDInfo().HScreenSize > 0.140f) // 7"
+                {
+              SConfig.SetDistortionFitPointVP(-1.0f, 0.0f);
+            } else {
+              SConfig.SetDistortionFitPointVP(0.0f, 1.0f);
+            }
+          } else {
+            // No fitting; scale == 1.0.
+            SConfig.SetDistortionFitPointVP(0, 0);
+          }
+        }
+        break;
+
+        // Support toggling background color for distortion so that we can see
+        // the effect on the periphery.
+      case Key_V:
+        if (down) {
+          if (DistortionClearColor.B == 0) {
+            DistortionClearColor = Color(0, 128, 255);
+          } else {
+            DistortionClearColor = Color(0, 0, 0);
+          }
+
+          pRender->SetDistortionClearColor(DistortionClearColor);
+        }
+        break;
+
+      case Key_R:
+        SFusion.Reset();
+        SetAdjustMessage("Sensor Fusion Reset");
+        break;
+
+      // Distortion correction adjustments
+      case Key_H:
+        pAdjustFunc = down ? &HackulusApp::AdjustDistortionK0 : NULL;
+        AdjustDirection = -1;
+        break;
+      case Key_Y:
+        pAdjustFunc = down ? &HackulusApp::AdjustDistortionK0 : NULL;
+        AdjustDirection = 1;
+        break;
+      case Key_J:
+        pAdjustFunc = down ? &HackulusApp::AdjustDistortionK1 : NULL;
+        AdjustDirection = -1;
+        break;
+      case Key_U:
+        pAdjustFunc = down ? &HackulusApp::AdjustDistortionK1 : NULL;
+        AdjustDirection = 1;
+        break;
+      case Key_K:
+        pAdjustFunc = down ? &HackulusApp::AdjustDistortionK2 : NULL;
+        AdjustDirection = -1;
+        break;
+      case Key_I:
+        pAdjustFunc = down ? &HackulusApp::AdjustDistortionK2 : NULL;
+        AdjustDirection = 1;
+        break;
+      case Key_L:
+        pAdjustFunc = down ? &HackulusApp::AdjustDistortionK3 : NULL;
+        AdjustDirection = -1;
+        break;
+      case Key_O:
+        pAdjustFunc = down ? &HackulusApp::AdjustDistortionK3 : NULL;
+        AdjustDirection = 1;
+        break;
+
+      case Key_G:
+        if (down) {
+          if (SceneMode == Scene_World) {
+            SceneMode = Scene_Grid;
+            SetAdjustMessage("Grid Only");
+          } else if (SceneMode == Scene_Grid) {
+            SceneMode = Scene_Both;
+            SetAdjustMessage("Grid Overlay");
+          } else if (SceneMode == Scene_Both) {
+            SceneMode = Scene_World;
+            SetAdjustMessage("Grid Off");
+          }
+        }
+        break;
+
+        // Reset the camera position in case we get stuck
+      case Key_T:
+        ThePlayer.EyePos = Vector3f(10.0f, ThePlayer.UserEyeHeight, 10.0f);
+        break;
+
+      case Key_N:
+        pAdjustFunc = down ? &HackulusApp::AdjustMotionPrediction : NULL;
+        AdjustDirection = -1;
+        break;
+
+      case Key_M:
+        pAdjustFunc = down ? &HackulusApp::AdjustMotionPrediction : NULL;
+        AdjustDirection = 1;
+        break;
+
+        /*
+         case Key_N:
+         RaiseLOD();
+         break;
+         case Key_M:
+         DropLOD();
+         break;
+         */
+
+      // Cycle through drift correction options
+      case Key_Z:
+        if (down) {
+          if (SFusion.IsYawCorrectionEnabled()) {
+            SFusion.SetGravityEnabled(false);
+            SFusion.SetYawCorrectionEnabled(false);
+          } else if (SFusion.IsGravityEnabled()) {
+            SFusion.SetYawCorrectionEnabled(true);
+          } else {
+            SFusion.SetGravityEnabled(true);
+          }
+          SetAdjustMessage("Tilt Correction %s\nYaw Correction %s",
+              SFusion.IsGravityEnabled() ? "On" : "Off",
+              SFusion.IsYawCorrectionEnabled() ? "On" : "Off");
+        }
+        break;
+
+
+      case Key_C:
+        if (down) {
+          // Toggle chromatic aberration correction on/off.
+          RenderDevice::PostProcessShader shader =
+              pRender->GetPostProcessShader();
+
+          if (shader == RenderDevice::PostProcessShader_Distortion) {
+            pRender->SetPostProcessShader(
+                RenderDevice::PostProcessShader_DistortionAndChromAb);
+            SetAdjustMessage("Chromatic Aberration Correction On");
+          } else if (shader
+              == RenderDevice::PostProcessShader_DistortionAndChromAb) {
+            pRender->SetPostProcessShader(
+                RenderDevice::PostProcessShader_Distortion);
+            SetAdjustMessage("Chromatic Aberration Correction Off");
+          } else
+            OVR_ASSERT(false);
+        }
+        break;
+
+      case Key_P:
+        if (down) {
+          // Toggle motion prediction.
+          if (SFusion.IsPredictionEnabled()) {
+            SFusion.SetPredictionEnabled(false);
+            SetAdjustMessage("Motion Prediction Off");
+          } else {
+            SFusion.SetPredictionEnabled(true);
+            SetAdjustMessage("Motion Prediction On");
+          }
+        }
+        break;
+    }
+    return;
+  }
+
+  switch (key) {
       // Handle player movement keys.
       // We just update movement state here, while the actual translation is done in OnIdle()
       // based on time.
@@ -514,6 +684,36 @@ void HackulusApp::OnKey(OVR::KeyCode key, int chr, bool down, int modifiers) {
     case Key_Right:
       ThePlayer.SetInput(Player::MoveRight, down, 2);
       break;
+    case Key_Q : {
+      ThePlayer.SetInput(Player::MoveUp, down, 1);
+    } break;
+    case Key_E : {
+      ThePlayer.SetInput(Player::MoveDown, down, 1);
+    } break;
+    case Key_R : {
+      ThePlayer.SetInput(Player::MoveIn, down, 1);
+    } break;
+    case Key_F : {
+      ThePlayer.SetInput(Player::MoveOut, down, 1);
+    } break;
+//    case 't' : {
+//      _camera.ApplyRollInput(-rollAmount, Camera::RIGHT, Camera::UP);
+//    } break;
+//    case 'g' : {
+//      _camera.ApplyRollInput(rollAmount, Camera::RIGHT, Camera::UP);
+//    } break;
+//    case 'y' : {
+//      _camera.ApplyRollInput(-rollAmount, Camera::INSIDE, Camera::RIGHT);
+//    } break;
+//    case 'h' : {
+//      _camera.ApplyRollInput(rollAmount, Camera::INSIDE, Camera::RIGHT);
+//    } break;
+//    case 'u' : {
+//      _camera.ApplyRollInput(-rollAmount, Camera::UP, Camera::INSIDE);
+//    } break;
+//    case 'j' : {
+//      _camera.ApplyRollInput(rollAmount, Camera::UP, Camera::INSIDE);
+//    } break;
 
     case Key_Minus:
       pAdjustFunc = down ? &HackulusApp::AdjustEyeHeight : 0;
@@ -522,36 +722,6 @@ void HackulusApp::OnKey(OVR::KeyCode key, int chr, bool down, int modifiers) {
     case Key_Equal:
       pAdjustFunc = down ? &HackulusApp::AdjustEyeHeight : 0;
       AdjustDirection = 1;
-      break;
-
-    case Key_B:
-      if (down) {
-        if (SConfig.GetDistortionScale() == 1.0f) {
-          if (SConfig.GetHMDInfo().HScreenSize > 0.140f) // 7"
-              {
-            SConfig.SetDistortionFitPointVP(-1.0f, 0.0f);
-          } else {
-            SConfig.SetDistortionFitPointVP(0.0f, 1.0f);
-          }
-        } else {
-          // No fitting; scale == 1.0.
-          SConfig.SetDistortionFitPointVP(0, 0);
-        }
-      }
-      break;
-
-      // Support toggling background color for distortion so that we can see
-      // the effect on the periphery.
-    case Key_V:
-      if (down) {
-        if (DistortionClearColor.B == 0) {
-          DistortionClearColor = Color(0, 128, 255);
-        } else {
-          DistortionClearColor = Color(0, 0, 0);
-        }
-
-        pRender->SetDistortionClearColor(DistortionClearColor);
-      }
       break;
 
     case Key_F1:
@@ -568,11 +738,6 @@ void HackulusApp::OnKey(OVR::KeyCode key, int chr, bool down, int modifiers) {
       SConfig.SetStereoMode(Stereo_LeftRight_Multipass);
       PostProcess = PostProcess_Distortion;
       SetAdjustMessage("StereoMode: Stereo + Distortion");
-      break;
-
-    case Key_R:
-      SFusion.Reset();
-      SetAdjustMessage("Sensor Fusion Reset");
       break;
 
     case Key_Space:
@@ -664,40 +829,6 @@ void HackulusApp::OnKey(OVR::KeyCode key, int chr, bool down, int modifiers) {
       AdjustDirection = -1;
       break;
 
-      // Distortion correction adjustments
-    case Key_H:
-      pAdjustFunc = down ? &HackulusApp::AdjustDistortionK0 : NULL;
-      AdjustDirection = -1;
-      break;
-    case Key_Y:
-      pAdjustFunc = down ? &HackulusApp::AdjustDistortionK0 : NULL;
-      AdjustDirection = 1;
-      break;
-    case Key_J:
-      pAdjustFunc = down ? &HackulusApp::AdjustDistortionK1 : NULL;
-      AdjustDirection = -1;
-      break;
-    case Key_U:
-      pAdjustFunc = down ? &HackulusApp::AdjustDistortionK1 : NULL;
-      AdjustDirection = 1;
-      break;
-    case Key_K:
-      pAdjustFunc = down ? &HackulusApp::AdjustDistortionK2 : NULL;
-      AdjustDirection = -1;
-      break;
-    case Key_I:
-      pAdjustFunc = down ? &HackulusApp::AdjustDistortionK2 : NULL;
-      AdjustDirection = 1;
-      break;
-    case Key_L:
-      pAdjustFunc = down ? &HackulusApp::AdjustDistortionK3 : NULL;
-      AdjustDirection = -1;
-      break;
-    case Key_O:
-      pAdjustFunc = down ? &HackulusApp::AdjustDistortionK3 : NULL;
-      AdjustDirection = 1;
-      break;
-
     case Key_Tab:
       if (down) {
         float t0 = SConfig.GetDistortionK(0), t1 = SConfig.GetDistortionK(1),
@@ -749,31 +880,10 @@ void HackulusApp::OnKey(OVR::KeyCode key, int chr, bool down, int modifiers) {
       }
       break;
 
-    case Key_G:
-      if (down) {
-        if (SceneMode == Scene_World) {
-          SceneMode = Scene_Grid;
-          SetAdjustMessage("Grid Only");
-        } else if (SceneMode == Scene_Grid) {
-          SceneMode = Scene_Both;
-          SetAdjustMessage("Grid Overlay");
-        } else if (SceneMode == Scene_Both) {
-          SceneMode = Scene_World;
-          SetAdjustMessage("Grid Off");
-        }
-      }
-      break;
-
       // Holding down Shift key accelerates adjustment velocity.
     case Key_Shift:
       ShiftDown = down;
       break;
-
-      // Reset the camera position in case we get stuck
-    case Key_T:
-      ThePlayer.EyePos = Vector3f(10.0f, ThePlayer.UserEyeHeight, 10.0f);
-      break;
-
     case Key_F5:
       if (!down) {
         UPInt numNodes = MainScene.Models.GetSize();
@@ -787,42 +897,6 @@ void HackulusApp::OnKey(OVR::KeyCode key, int chr, bool down, int modifiers) {
       }
       break;
 
-    case Key_N:
-      pAdjustFunc = down ? &HackulusApp::AdjustMotionPrediction : NULL;
-      AdjustDirection = -1;
-      break;
-
-    case Key_M:
-      pAdjustFunc = down ? &HackulusApp::AdjustMotionPrediction : NULL;
-      AdjustDirection = 1;
-      break;
-
-      /*
-       case Key_N:
-       RaiseLOD();
-       break;
-       case Key_M:
-       DropLOD();
-       break;
-       */
-
-      // Cycle through drift correction options
-    case Key_Z:
-      if (down) {
-        if (SFusion.IsYawCorrectionEnabled()) {
-          SFusion.SetGravityEnabled(false);
-          SFusion.SetYawCorrectionEnabled(false);
-        } else if (SFusion.IsGravityEnabled()) {
-          SFusion.SetYawCorrectionEnabled(true);
-        } else {
-          SFusion.SetGravityEnabled(true);
-        }
-        SetAdjustMessage("Tilt Correction %s\nYaw Correction %s",
-            SFusion.IsGravityEnabled() ? "On" : "Off",
-            SFusion.IsYawCorrectionEnabled() ? "On" : "Off");
-      }
-      break;
-
       // Show view of yaw angles (for mag calibration/analysis)
     case Key_F6:
       if (down) {
@@ -832,39 +906,6 @@ void HackulusApp::OnKey(OVR::KeyCode key, int chr, bool down, int modifiers) {
         } else {
           SceneMode = Scene_World;
           SetAdjustMessage("Magnetometer Marks Off");
-        }
-      }
-      break;
-
-    case Key_C:
-      if (down) {
-        // Toggle chromatic aberration correction on/off.
-        RenderDevice::PostProcessShader shader =
-            pRender->GetPostProcessShader();
-
-        if (shader == RenderDevice::PostProcessShader_Distortion) {
-          pRender->SetPostProcessShader(
-              RenderDevice::PostProcessShader_DistortionAndChromAb);
-          SetAdjustMessage("Chromatic Aberration Correction On");
-        } else if (shader
-            == RenderDevice::PostProcessShader_DistortionAndChromAb) {
-          pRender->SetPostProcessShader(
-              RenderDevice::PostProcessShader_Distortion);
-          SetAdjustMessage("Chromatic Aberration Correction Off");
-        } else
-          OVR_ASSERT(false);
-      }
-      break;
-
-    case Key_P:
-      if (down) {
-        // Toggle motion prediction.
-        if (SFusion.IsPredictionEnabled()) {
-          SFusion.SetPredictionEnabled(false);
-          SetAdjustMessage("Motion Prediction Off");
-        } else {
-          SFusion.SetPredictionEnabled(true);
-          SetAdjustMessage("Motion Prediction On");
         }
       }
       break;
@@ -1092,22 +1133,23 @@ void HackulusApp::OnIdle() {
 
   // Rotate and position View Camera, using YawPitchRoll in BodyFrame coordinates.
   //
-  Matrix4f rollPitchYaw = Matrix4f::RotationY(ThePlayer.EyeYaw)
+  Matrix4 rollPitchYaw = Matrix4f::RotationY(ThePlayer.EyeYaw)
       * Matrix4f::RotationX(ThePlayer.EyePitch)
       * Matrix4f::RotationZ(ThePlayer.EyeRoll);
-  Vector3f up = rollPitchYaw.Transform(UpVector);
-  Vector3f forward = rollPitchYaw.Transform(ForwardVector);
+  Vector4f up = rollPitchYaw.transform(Player::UpVector);
+  Vector4f forward = rollPitchYaw.transform(Player::ForwardVector);
 
   // Minimal head modeling; should be moved as an option to SensorFusion.
   float headBaseToEyeHeight = 0.15f; // Vertical height of eye from base of head
   float headBaseToEyeProtrusion = 0.09f; // Distance forward of eye from base of head
 
-  Vector3f eyeCenterInHeadFrame(0.0f, headBaseToEyeHeight,
-      -headBaseToEyeProtrusion);
-  Vector3f shiftedEyePos = ThePlayer.EyePos.asV3()
-      + rollPitchYaw.Transform(eyeCenterInHeadFrame);
+  Vector4f eyeCenterInHeadFrame(0.0f, headBaseToEyeHeight,
+      -headBaseToEyeProtrusion, 0.0f);
+  Vector4f shiftedEyePos = ThePlayer.EyePos
+      + rollPitchYaw.transform(eyeCenterInHeadFrame);
   shiftedEyePos.y -= eyeCenterInHeadFrame.y; // Bring the head back down to original height
-  View = Matrix4f::LookAtRH(shiftedEyePos, shiftedEyePos + forward, up);
+  View = Matrix4f::LookAtRH(shiftedEyePos.asV3(), shiftedEyePos.asV3() + forward.asV3(), up.asV3());
+  FullView.CameraPos = shiftedEyePos;
 
   //  Transformation without head modeling.
   // View = Matrix4f::LookAtRH(EyePos, EyePos + forward, up);
@@ -1195,7 +1237,10 @@ void HackulusApp::Render(const StereoEyeParams& stereo) {
 //    }
     FullView.CameraView = FullView.View;
     FullView.CameraView.transpose().splice3dInto4d(FullView.CameraView, FullView.CameraPos);
-    FullView.CameraPos.w = 10.0f;
+//    FullView.CameraPos.w = 10.0f;
+//    FullView.CameraView = Matrix4(FullView.View).convertToTransposed3d();
+    //FullView.CameraView.transpose().splice3dInto4d(FullView.CameraView, FullView.CameraPos);
+    //FullView.CameraPos.w = 10.0f;
     //FullView.CameraView = FullView.CameraView.transpose();
 //    printf("\nView:\n");
 //    Matrix4 temp(FullView.View);

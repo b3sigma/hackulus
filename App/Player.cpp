@@ -2,6 +2,11 @@
 #include "Player.h"
 #include <Kernel/OVR_Alg.h>
 
+const Vector4f Player::RightVector = Vector4f(1.0f, 0.0f, 0.0f, 0.0f);
+const Vector4f Player::UpVector = Vector4f(0.0f, 1.0f, 0.0f, 0.0f);
+const Vector4f Player::ForwardVector = Vector4f(0.0f, 0.0f, -1.0f, 0.0f);
+const Vector4f Player::InVector = Vector4f(0.0f, 0.0f, 0.0f, 1.0f);
+
 Player::Player(void)
     : UserEyeHeight(1.8f), EyePos(7.7f, 1.8f, -1.0f, 0.0f), EyeYaw(YawInitial),
       EyePitch(0), EyeRoll(0), LastSensorYaw(0),
@@ -23,14 +28,16 @@ void Player::HandleCollision(double dt,
     Array<Ptr<CollisionModel> >* collisionModels,
     Array<Ptr<CollisionModel> >* groundCollisionModels, bool shiftDown) {
   if (Inputs[MoveForward] || Inputs[MoveBackward] || Inputs[MoveLeft] || Inputs[MoveRight]
+      || Inputs[MoveUp] || Inputs[MoveDown] || Inputs[MoveIn] || Inputs[MoveOut]
       || GamepadMove.LengthSq() > 0) {
-    Vector3f orientationVector;
+    Vector4f orientationVector;
     // Handle keyboard movement.
     // This translates EyePos based on Yaw vector direction and keys pressed.
     // Note that Pitch and Roll do not affect movement (they only affect view).
-    if (Inputs[MoveForward] || Inputs[MoveBackward] || Inputs[MoveLeft] || Inputs[MoveRight]) {
-      Vector3f localMoveVector(0, 0, 0);
-      Matrix4f yawRotate = Matrix4f::RotationY(EyeYaw);
+    if (Inputs[MoveForward] || Inputs[MoveBackward] || Inputs[MoveLeft] || Inputs[MoveRight]
+        || Inputs[MoveUp] || Inputs[MoveDown] || Inputs[MoveIn] || Inputs[MoveOut]) {
+      Vector4f localMoveVector(0, 0, 0, 0);
+      Matrix4 yawRotate = Matrix4f::RotationY(EyeYaw);
 
       if (Inputs[MoveForward]) {
         localMoveVector = ForwardVector;
@@ -44,9 +51,21 @@ void Player::HandleCollision(double dt,
         localMoveVector -= RightVector;
       }
 
+      if (Inputs[MoveUp]) {
+        localMoveVector += UpVector;
+      } else if (Inputs[MoveDown]) {
+        localMoveVector -= UpVector;
+      }
+
+      if (Inputs[MoveIn]) {
+        localMoveVector += InVector;
+      } else if (Inputs[MoveOut]) {
+        localMoveVector -= InVector;
+      }
+
       // Normalize vector so we don't move faster diagonally.
-      localMoveVector.Normalize();
-      orientationVector = yawRotate.Transform(localMoveVector);
+      localMoveVector.storeNormalized();
+      orientationVector = yawRotate.transform(localMoveVector);
     } else if (GamepadMove.LengthSq() > 0) {
       Matrix4f yawRotate = Matrix4f::RotationY(EyeYaw);
       GamepadMove.Normalize();
@@ -65,27 +84,26 @@ void Player::HandleCollision(double dt,
     bool gotCollision = false;
     bool gotCollisionLeft = false;
     bool gotCollisionRight = false;
-    Vector3f& v3EyePos = EyePos.asV3();
 
     for (unsigned int i = 0; i < collisionModels->GetSize(); ++i) {
       // Checks for collisions at eye level, which should prevent us from
       // slipping under walls
-      if (collisionModels->At(i)->TestRay(v3EyePos, orientationVector,
+      if (collisionModels->At(i)->TestRay(EyePos.asV3(), orientationVector.asV3(),
           checkLengthForward, &collisionPlaneForward)) {
         gotCollision = true;
       }
 
-      Matrix4f leftRotation = Matrix4f::RotationY(
+      Matrix4 leftRotation = Matrix4f::RotationY(
           45 * (Math<float>::Pi / 180.0f));
-      Vector3f leftVector = leftRotation.Transform(orientationVector);
-      if (collisionModels->At(i)->TestRay(v3EyePos, leftVector, checkLengthLeft,
+      Vector4f leftVector = leftRotation.transform(orientationVector);
+      if (collisionModels->At(i)->TestRay(EyePos.asV3(), leftVector.asV3(), checkLengthLeft,
           &collisionPlaneLeft)) {
         gotCollisionLeft = true;
       }
-      Matrix4f rightRotation = Matrix4f::RotationY(
+      Matrix4 rightRotation = Matrix4f::RotationY(
           -45 * (Math<float>::Pi / 180.0f));
-      Vector3f rightVector = rightRotation.Transform(orientationVector);
-      if (collisionModels->At(i)->TestRay(v3EyePos, rightVector, checkLengthRight,
+      Vector4f rightVector = rightRotation.transform(orientationVector);
+      if (collisionModels->At(i)->TestRay(EyePos.asV3(), rightVector.asV3(), checkLengthRight,
           &collisionPlaneRight)) {
         gotCollisionRight = true;
       }
@@ -93,9 +111,9 @@ void Player::HandleCollision(double dt,
 
     if (gotCollision) {
       // Project orientationVector onto the plane
-      Vector3f slideVector = orientationVector
+      Vector3f slideVector = orientationVector.asV3()
           - collisionPlaneForward.N
-              * (orientationVector.Dot(collisionPlaneForward.N));
+              * (orientationVector.asV3().Dot(collisionPlaneForward.N));
 
       // Make sure we aren't in a corner
       for (unsigned int j = 0; j < collisionModels->GetSize(); ++j) {
@@ -111,14 +129,14 @@ void Player::HandleCollision(double dt,
     }
     // Checks for collisions at foot level, which allows us to follow terrain
     orientationVector *= moveLength;
-    v3EyePos += orientationVector;
+    EyePos += orientationVector;
 
     Planef collisionPlaneDown;
     float finalDistanceDown = 10;
 
     for (unsigned int i = 0; i < groundCollisionModels->GetSize(); ++i) {
       float checkLengthDown = 10;
-      if (groundCollisionModels->At(i)->TestRay(v3EyePos,
+      if (groundCollisionModels->At(i)->TestRay(EyePos.asV3(),
           Vector3f(0.0f, -1.0f, 0.0f), checkLengthDown, &collisionPlaneDown)) {
         finalDistanceDown = Alg::Min(finalDistanceDown, checkLengthDown);
       }
@@ -126,7 +144,7 @@ void Player::HandleCollision(double dt,
 
     // Maintain the minimum camera height
     if (UserEyeHeight - finalDistanceDown < 1.0f) {
-      v3EyePos.y += UserEyeHeight - finalDistanceDown;
+      EyePos.y += UserEyeHeight - finalDistanceDown;
     }
   }
 }

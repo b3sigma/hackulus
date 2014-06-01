@@ -9,15 +9,6 @@
 using namespace OVR;
 using namespace OVR::Render;
 
-//-------------------------------------------------------------------------------------
-// The RHS coordinate system is defines as follows (as seen in perspective view):
-//  Y - Up
-//  Z - Back
-//  X - Right
-const Vector3f UpVector(0.0f, 1.0f, 0.0f);
-const Vector3f ForwardVector(0.0f, 0.0f, -1.0f);
-const Vector3f RightVector(1.0f, 0.0f, 0.0f);
-
 // We start out looking in the positive Z (180 degree rotation).
 const float YawInitial = 3.141592f;
 const float Sensitivity = 1.0f;
@@ -32,6 +23,17 @@ const float RailHeight = 0.8f;
 // Player class describes position and movement state of the player in the 3D world.
 class Player {
 public:
+
+  //-------------------------------------------------------------------------------------
+  // The RHS coordinate system is defines as follows (as seen in perspective view):
+  //  Y - Up
+  //  Z - Back
+  //  X - Right
+  //  W - In
+  const static Vector4f UpVector;
+  const static Vector4f ForwardVector;
+  const static Vector4f RightVector;
+  const static Vector4f InVector;
 
   enum InputType {
     MoveForward,
