@@ -169,10 +169,10 @@ static const char* StdVertexFourToThreeSrc = R"derp(
       vec4 homogenous = Proj * threeSpace;
       gl_Position = homogenous;
       oColor.a = 0.2;
-      oColor.g = Color.y;
-      oColor.r = abs(savedW / 10.0);
-      oColor.b = abs(threeSpace.x / 10.0);
-      oColor.rgb = max(oColor.rgb, vec3(0,0,0));
+      oColor.g = abs(Color.y);
+      oColor.r = abs(savedW / 1.0);
+      oColor.b = abs(threeSpace.x / 1.0);
+      //oColor.rgb = abs(oColor.rgb, vec3(0,0,0));
       oColor.rgb += vec3(0.1,0.1,0.1);
     }
 )derp";
@@ -221,18 +221,18 @@ static const char* DirectVertexShaderSrc = R"derp(
 )derp";
 
 static const char* DebugFragShaderSrc = R"derp(
-    uniform vec4 oColor;
+    varying vec4 oColor;
     void main()
     {
-       gl_FragColor = vec4(1.0,oColor.y,oColor.z,1.0);
+       gl_FragColor = vec4(1.0,0,0,1.0);
     }
 )derp";
 
 static const char* SolidFragShaderSrc = R"derp(
-    uniform vec4 Color;
+    varying vec4 oColor;
     void main()
     {
-       gl_FragColor = Color;
+       gl_FragColor = oColor;
     }
 )derp";
 
@@ -456,7 +456,9 @@ void RenderDevice::BeginRendering() {
   glLineWidth(3.0f);
   glEnable(GL_LINE_SMOOTH);
   glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glBlendEquation(GL_ADD);
+  glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA);
+  //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
@@ -878,7 +880,7 @@ bool ShaderSet::SetUniform(const char* name, int n, const float* v) {
       return 1;
     }
 
-  LogError("Warning: uniform %s not present in selected shader", name);
+  OVR_DEBUG_LOG(("Warning: uniform %s not present in selected shader", name));
   return 0;
 }
 

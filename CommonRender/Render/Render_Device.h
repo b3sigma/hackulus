@@ -522,6 +522,19 @@ public:
   ~Model() {
   }
 
+  void PrintIt() {
+    printf("Had %d verts, %d indices, %d tris\n",
+        (int)Vertices.GetSize(), (int)Indices.GetSize(), (int)Indices.GetSize() / 3);
+    for (unsigned int iV = 0; iV < Vertices.GetSize(); iV++) {
+      Vertex& v = Vertices[iV];
+      printf("v(%d):\t%f\t%f\t%f\t%f\n", iV, v.Pos.x, v.Pos.y, v.Pos.z, v.Pos.w);
+    }
+    for (unsigned int iI = 0; iI < Indices.GetSize(); iI++) {
+      UInt16& i = Indices[iI];
+      printf("i(%d):%d\n", iI, i);
+    }
+  }
+
   virtual NodeType GetType() const {
     return Node_Model;
   }
@@ -565,6 +578,9 @@ public:
   }
   UInt16 AddVertex(const fd::Vec4f& p) {
     return AddVertex(Vertex(p));
+  }
+  UInt16 AddVertex(const fd::Vec4f& p, const Color& c) {
+    return AddVertex(Vertex(p, c));
   }
 
   void AddLine(UInt16 a, UInt16 b) {

@@ -1,3 +1,5 @@
+#include <vector>
+
 #include "../fourd/common/fourmath.h"
 #include "../fourd/common/mesh.h"
 
@@ -1179,8 +1181,8 @@ void HackulusApp::Render(const StereoEyeParams& stereo) {
   pRender->ApplyStereoParams(stereo);
   pRender->Clear();
 
-  pRender->SetDepthMode(true, true);
-  //pRender->SetDepthMode(false, false);
+  //pRender->SetDepthMode(true, true);
+  pRender->SetDepthMode(false, false);
   if (SceneMode != Scene_Grid) {
     FullView.View = stereo.ViewAdjust * View;
 //    printf("\nRaw view\n");
@@ -1193,6 +1195,7 @@ void HackulusApp::Render(const StereoEyeParams& stereo) {
 //    }
     FullView.CameraView = FullView.View;
     FullView.CameraView.transpose().splice3dInto4d(FullView.CameraView, FullView.CameraPos);
+    FullView.CameraPos.w = 10.0f;
     //FullView.CameraView = FullView.CameraView.transpose();
 //    printf("\nView:\n");
 //    Matrix4 temp(FullView.View);
@@ -1427,36 +1430,51 @@ void HackulusApp::PopulateScene(const char *fileName) {
   consistencyTestShader->GetShaders()->SetShader(
       pRender->LoadBuiltinShader(Shader_Vertex, VShader_MVP));
   consistencyTestShader->GetShaders()->SetShader(
-//      pRender->LoadBuiltinShader(Shader_Fragment, FShader_Solid));
-      pRender->LoadBuiltinShader(Shader_Fragment, FShader_Debug));
+      pRender->LoadBuiltinShader(Shader_Fragment, FShader_Solid));
+//      pRender->LoadBuiltinShader(Shader_Fragment, FShader_Debug));
   testGreenBox->Fill = consistencyTestShader;
   MainScene.World.Add(testGreenBox);
   MainScene.Models.PushBack(testGreenBox);
 
 
+  typedef std::vector<Color> ColorList;
+  ColorList colorArray;
+  int numSteps = 8;
+  colorArray.reserve(numSteps);
+  for (int steps = 0; steps < numSteps; steps++) {
+    colorArray.push_back(Color(0, (UByte)((float)(steps + 1) / (float)numSteps * 0xFF), 0, 0xFF));
+  }
+
   fd::Mesh tesseract;
   Vector4f tesseractOrigin(1.0f,0,0,0);
 //  tesseract.buildCube(1.0f, fd::Vec4f(0.05f,0.05f,0.05f,0.05f), fd::Vec4f(0, 0, 0, 0));
-  tesseract.buildTesseract(1.0f, fd::Vec4f(0.05f,0.05f,0.05f,0.05f), fd::Vec4f(0,0,0,0)); // fd::Vec4f(0, 1, 2, 0));
+  tesseract.buildTesseract(1.0f, fd::Vec4f(0.05f,0.05f,0.05f,0.05f), fd::Vec4f(0.101f, 0.202f, 0.303f, 0.404f)); // fd::Vec4f(0,0,0,0)); // fd::Vec4f(0, 1, 2, 0));
   Ptr<Model> tesseractModel = *new Model(Prim_Triangles);
   // TODO: This is ugly inefficient, fix it.
   fd::Vec4f triA, triB, triC;
+  int colorIndex = 0;
   for (int tri = 0; tri < tesseract.getNumberTriangles(); ++tri) {
     tesseract.getTriangle(tri, triA, triB, triC);
+
+    Color vertColor = colorArray[colorIndex];
     tesseractModel->AddTriangle(
-        tesseractModel->AddVertex(triB),
-        tesseractModel->AddVertex(triA),
-        tesseractModel->AddVertex(triC));
+        tesseractModel->AddVertex(triA, vertColor),
+        tesseractModel->AddVertex(triB, vertColor),
+        tesseractModel->AddVertex(triC, vertColor));
+    if ((tri+1) % 2 == 0) {
+      colorIndex = (colorIndex + 1) % colorArray.size();
+    }
   }
+//  tesseract.printIt();
+//  tesseractModel->PrintIt();
   Ptr<ShaderFill> shader = *new ShaderFill(*pRender->CreateShaderSet());
   shader->GetShaders()->SetShader(
 //      pRender->LoadBuiltinShader(Shader_Vertex, VShader_Debug));
       pRender->LoadBuiltinShader(Shader_Vertex, VShader_FourToThree));
 //      pRender->LoadBuiltinShader(Shader_Vertex, VShader_MVP));
-//  shader->GetShaders()->SetShader(
-//      pRender->LoadBuiltinShader(Shader_Fragment, FShader_Solid));
   shader->GetShaders()->SetShader(
-      pRender->LoadBuiltinShader(Shader_Fragment, FShader_Debug));
+//      pRender->LoadBuiltinShader(Shader_Fragment, FShader_Debug));
+        pRender->LoadBuiltinShader(Shader_Fragment, FShader_Solid));
   tesseractModel->Fill = shader;
   tesseractModel->SetPosition(tesseractOrigin.asV3());
 
