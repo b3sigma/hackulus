@@ -108,6 +108,43 @@ void InitGLExtensions()
 
 #endif
 
+static const char* StdVertexDebugSrc = R"derp(
+    uniform mat4 View;
+    uniform mat4 WorldMat;
+    uniform vec4 WorldPos;
+    uniform vec4 CameraPos;
+    uniform mat4 CameraMatrix;
+    uniform mat4 Proj;
+    uniform mat4 FourToThree;
+    attribute vec4 Position;
+    attribute vec4 Color;
+
+    varying vec3 oVPos;
+    varying vec4 oColor;
+    void main() {
+      //gl_Position = Proj * (View * Position);
+      vec4 worldSpace = WorldMat * Position;
+      worldSpace += WorldPos;
+      vec4 cameraSpace = CameraMatrix * worldSpace;
+      cameraSpace = cameraSpace + CameraPos;
+      //gl_Position = Proj * cameraSpace;
+      vec4 threeSpace = FourToThree * cameraSpace;
+      float savedW = threeSpace.w;
+      threeSpace.w = 1.0;
+      oVPos = threeSpace.xyz;
+      vec4 homogenous = Proj * threeSpace;
+      gl_Position = homogenous;
+      //oVPos = View * Position;
+      oColor = vec4(0,0,1,1);
+      //oColor.a = 0.2;
+      //oColor.g = Color.y;
+      //oColor.r = abs(savedW / 10.0);
+      //oColor.b = abs(threeSpace.x / 10.0);
+      //oColor.rgb = max(oColor.rgb, vec3(0,0,0));
+      //oColor.rgb += vec3(0.1,0.1,0.1);
+    }
+)derp";
+
 static const char* StdVertexFourToThreeSrc = R"derp(
     uniform mat4 WorldMat;
     uniform vec4 WorldPos;
@@ -123,8 +160,8 @@ static const char* StdVertexFourToThreeSrc = R"derp(
     void main() {
       vec4 worldSpace = WorldMat * Position;
       worldSpace += WorldPos;
-      vec4 cameraSpace = worldSpace - CameraPos;
-      cameraSpace = CameraMatrix * cameraSpace;
+      vec4 cameraSpace = CameraMatrix * worldSpace;
+      cameraSpace = cameraSpace + CameraPos;
       vec4 threeSpace = FourToThree * cameraSpace;
       float savedW = threeSpace.w;
       threeSpace.w = 1.0;
@@ -139,6 +176,7 @@ static const char* StdVertexFourToThreeSrc = R"derp(
       oColor.rgb += vec3(0.1,0.1,0.1);
     }
 )derp";
+
 
 static const char* StdVertexShaderSrc = R"derp(
     uniform mat4 Proj;
@@ -183,9 +221,10 @@ static const char* DirectVertexShaderSrc = R"derp(
 )derp";
 
 static const char* DebugFragShaderSrc = R"derp(
+    uniform vec4 oColor;
     void main()
     {
-       gl_FragColor = vec4(1.0,0.0,0.0,1.0);
+       gl_FragColor = vec4(1.0,oColor.y,oColor.z,1.0);
     }
 )derp";
 
@@ -373,7 +412,8 @@ static const char* PostProcessFullFragShaderSrc = R"derp(
 )derp";
 
 static const char* VShaderSrcs[VShader_Count] = { DirectVertexShaderSrc,
-    StdVertexShaderSrc, PostProcessVertexShaderSrc, StdVertexFourToThreeSrc};
+    StdVertexShaderSrc, PostProcessVertexShaderSrc, StdVertexFourToThreeSrc,
+    StdVertexDebugSrc};
 static const char* FShaderSrcs[FShader_Count] = { SolidFragShaderSrc,
     GouraudFragShaderSrc, TextureFragShaderSrc, AlphaTextureFragShaderSrc,
     PostProcessFragShaderSrc, PostProcessFullFragShaderSrc,
@@ -411,6 +451,7 @@ void RenderDevice::BeginRendering() {
   //glEnable(GL_CULL_FACE);
   //glFrontFace(GL_CW);
   glDisable(GL_CULL_FACE);
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
   glLineWidth(3.0f);
   glEnable(GL_LINE_SMOOTH);
@@ -536,7 +577,7 @@ void RenderDevice::Render(const Matrix4f& matrix, Model* model, const ViewMatric
 
   Render(model->Fill ? (const Fill*) model->Fill : (const Fill*) DefaultFill,
       model->VertexBuffer, model->IndexBuffer, matrix, 0,
-      (int) model->Indices.GetSize(), model->GetPrimType());
+      (int) model->Indices.GetSize(), model->GetPrimType(), fullView);
 }
 
 void RenderDevice::Render(const Fill* fill, Render::Buffer* vertices,
@@ -632,7 +673,7 @@ void RenderDevice::RenderWithAlpha(const Fill* fill, Render::Buffer* vertices,
     Render::Buffer* indices, const Matrix4f& matrix, int offset, int count,
     PrimitiveType rprim, const ViewMatrices* fullView) {
   //glEnable(GL_BLEND);
-  Render(fill, vertices, indices, matrix, offset, count, rprim);
+  Render(fill, vertices, indices, matrix, offset, count, rprim, fullView);
   //glDisable(GL_BLEND);
 }
 

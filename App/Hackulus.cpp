@@ -1183,8 +1183,24 @@ void HackulusApp::Render(const StereoEyeParams& stereo) {
   //pRender->SetDepthMode(false, false);
   if (SceneMode != Scene_Grid) {
     FullView.View = stereo.ViewAdjust * View;
+//    printf("\nRaw view\n");
+//    float* raw = &FullView.View.M[0][0];
+//    for (int i = 0; i < 16; i++) {
+//      printf("%f\t", raw[i]);
+//      if((i + 1) % 4 == 0) {
+//        printf("\n");
+//      }
+//    }
     FullView.CameraView = FullView.View;
-    FullView.CameraView.splice3dInto4d(FullView.CameraView, FullView.CameraPos);
+    FullView.CameraView.transpose().splice3dInto4d(FullView.CameraView, FullView.CameraPos);
+    //FullView.CameraView = FullView.CameraView.transpose();
+//    printf("\nView:\n");
+//    Matrix4 temp(FullView.View);
+//    temp.printIt();
+//    printf("Spliced 4:\n");
+//    FullView.CameraView.printIt();
+//    printf("spliced pos:\n");
+//    FullView.CameraPos.printIt();
     FullView.FourToThree.storeIdentity();
     MainScene.Render(pRender, stereo.ViewAdjust * View, &FullView);
   }
@@ -1406,13 +1422,12 @@ void HackulusApp::PopulateScene(const char *fileName) {
   YawLinesScene.World.Add(yawLinesModel);
 
   Ptr<Model> testGreenBox = *Model::CreateBox(Color(0, 255, 0, 255),
-      Vector3f(0.0f, 0.1f, 0.0f), Vector3f(1.0f, 1.0f, 1.0f));
+      Vector3f(2.0f, 0.1f, 5.0f), Vector3f(1.0f, 1.0f, 1.0f));
   Ptr<ShaderFill> consistencyTestShader = *new ShaderFill(*pRender->CreateShaderSet());
   consistencyTestShader->GetShaders()->SetShader(
       pRender->LoadBuiltinShader(Shader_Vertex, VShader_MVP));
-//  consistencyTestShader->GetShaders()->SetShader(
-//      pRender->LoadBuiltinShader(Shader_Fragment, FShader_Solid));
   consistencyTestShader->GetShaders()->SetShader(
+//      pRender->LoadBuiltinShader(Shader_Fragment, FShader_Solid));
       pRender->LoadBuiltinShader(Shader_Fragment, FShader_Debug));
   testGreenBox->Fill = consistencyTestShader;
   MainScene.World.Add(testGreenBox);
@@ -1421,8 +1436,8 @@ void HackulusApp::PopulateScene(const char *fileName) {
 
   fd::Mesh tesseract;
   Vector4f tesseractOrigin(1.0f,0,0,0);
-  tesseract.buildCube(1.0f, fd::Vec4f(0.05f,0.05f,0.05f,0.05f), fd::Vec4f(0, 0, 0, 0));
-//  tesseract.buildTesseract(10.0f, fd::Vec4f(0,0,0,0), fd::Vec4f(0,0,0,0)); // fd::Vec4f(0, 1, 2, 0));
+//  tesseract.buildCube(1.0f, fd::Vec4f(0.05f,0.05f,0.05f,0.05f), fd::Vec4f(0, 0, 0, 0));
+  tesseract.buildTesseract(1.0f, fd::Vec4f(0.05f,0.05f,0.05f,0.05f), fd::Vec4f(0,0,0,0)); // fd::Vec4f(0, 1, 2, 0));
   Ptr<Model> tesseractModel = *new Model(Prim_Triangles);
   // TODO: This is ugly inefficient, fix it.
   fd::Vec4f triA, triB, triC;
@@ -1434,10 +1449,10 @@ void HackulusApp::PopulateScene(const char *fileName) {
         tesseractModel->AddVertex(triC));
   }
   Ptr<ShaderFill> shader = *new ShaderFill(*pRender->CreateShaderSet());
-//  shader->GetShaders()->SetShader(
-//      pRender->LoadBuiltinShader(Shader_Vertex, VShader_FourToThree));
   shader->GetShaders()->SetShader(
-      pRender->LoadBuiltinShader(Shader_Vertex, VShader_MVP));
+//      pRender->LoadBuiltinShader(Shader_Vertex, VShader_Debug));
+      pRender->LoadBuiltinShader(Shader_Vertex, VShader_FourToThree));
+//      pRender->LoadBuiltinShader(Shader_Vertex, VShader_MVP));
 //  shader->GetShaders()->SetShader(
 //      pRender->LoadBuiltinShader(Shader_Fragment, FShader_Solid));
   shader->GetShaders()->SetShader(

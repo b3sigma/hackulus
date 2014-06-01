@@ -65,7 +65,8 @@ enum BuiltinShaders {
   VShader_MVP = 1,
   VShader_PostProcess = 2,
   VShader_FourToThree = 3,
-  VShader_Count = 4,
+  VShader_Debug = 4,
+  VShader_Count = 5,
 
   FShader_Solid = 0,
   FShader_Gouraud = 1,
@@ -154,6 +155,11 @@ public:
   Matrix4(const Matrix4& m) : fd::Mat4f(m) {}
   // What are the odds that the column vs row alignment is what you expect here?
   Matrix4(const OVR::Matrix4f& m) : fd::Mat4f(&m.M[0][0]) {}
+
+  Matrix4& operator =(const fd::Mat4f& right) {
+    e = right.eigen();
+    return *this;
+  }
 };
 
 struct Color4f: public Vector3f {
