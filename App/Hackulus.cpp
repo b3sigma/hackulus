@@ -914,6 +914,57 @@ void HackulusApp::OnKey(OVR::KeyCode key, int chr, bool down, int modifiers) {
   }
 }
 
+static const char* HelpText =
+    "F1         \t100 NoStereo\n"
+        "F2         \t100 Stereo                     \t420 Z    \t520 Drift Correction\n"
+        "F3         \t100 StereoHMD                  \t420 F6   \t520 Yaw Drift Info\n"
+        "F4         \t100 MSAA                       \t420 R    \t520 Reset SensorFusion\n"
+        "F9         \t100 FullScreen                 \t420\n"
+        "F11        \t100 Fast FullScreen                   \t500 - +       \t660 Adj EyeHeight\n"
+        "C          \t100 Chromatic Ab                      \t500 [ ]       \t660 Adj FOV\n"
+        "P          \t100 Motion Pred                       \t500 Shift     \t660 Adj Faster\n"
+        "N/M        \t180 Adj Motion Pred\n"
+        "( / )      \t180 Adj EyeDistance";
+
+enum DrawTextCenterType {
+  DrawText_NoCenter = 0,
+  DrawText_VCenter = 0x1,
+  DrawText_HCenter = 0x2,
+  DrawText_Center = DrawText_VCenter | DrawText_HCenter
+};
+
+static void DrawTextBox(RenderDevice* prender, float x, float y, float textSize,
+    const char* text, DrawTextCenterType centerType = DrawText_NoCenter) {
+  float ssize[2] = { 0.0f, 0.0f };
+
+  prender->MeasureText(&DejaVu, text, textSize, ssize);
+
+  // Treat 0 a VCenter.
+  if (centerType & DrawText_HCenter) {
+    x = -ssize[0] / 2;
+  }
+  if (centerType & DrawText_VCenter) {
+    y = -ssize[1] / 2;
+  }
+
+  prender->FillRect(x - 0.02f, y - 0.02f, x + ssize[0] + 0.02f,
+      y + ssize[1] + 0.02f, Color(40, 40, 100, 210));
+  prender->RenderText(&DejaVu, text, x, y, textSize, Color(255, 255, 0, 210));
+}
+
+void PrintMat(const Matrix4f& m, const char* desc) {
+  if (desc) {
+    printf("%s\n", desc);
+  }
+  const float* raw = &m.M[0][0];
+  for (int i = 0; i < 16; i++) {
+    printf("%f\t", raw[i]);
+    if ((i + 1) % 4 == 0) {
+      printf("\n");
+    }
+  }
+}
+
 void HackulusApp::OnIdle() {
 
   double curtime = pPlatform->GetAppTime();
@@ -1138,6 +1189,7 @@ void HackulusApp::OnIdle() {
       * Matrix4f::RotationZ(ThePlayer.EyeRoll);
   Vector4f up = rollPitchYaw.transform(Player::UpVector);
   Vector4f forward = rollPitchYaw.transform(Player::ForwardVector);
+  Vector4f in = rollPitchYaw.transform(Player::InVector);
 
   // Minimal head modeling; should be moved as an option to SensorFusion.
   float headBaseToEyeHeight = 0.15f; // Vertical height of eye from base of head
@@ -1149,7 +1201,11 @@ void HackulusApp::OnIdle() {
       + rollPitchYaw.transform(eyeCenterInHeadFrame);
   shiftedEyePos.y -= eyeCenterInHeadFrame.y; // Bring the head back down to original height
   View = Matrix4f::LookAtRH(shiftedEyePos.asV3(), shiftedEyePos.asV3() + forward.asV3(), up.asV3());
-  FullView.CameraPos = shiftedEyePos;
+  fd::Mat4f::lookAtRH(shiftedEyePos, shiftedEyePos + forward, up, in,
+      static_cast<fd::Mat4f&>(FullView.CameraView),
+      static_cast<fd::Vec4f&>(FullView.CameraPos));
+  // You still bastard, fix this now while there is still time
+  FullView.CameraView = FullView.CameraView.transpose();
 
   //  Transformation without head modeling.
   // View = Matrix4f::LookAtRH(EyePos, EyePos + forward, up);
@@ -1178,44 +1234,6 @@ void HackulusApp::OnIdle() {
   pRender->ForceFlushGPU();
 }
 
-static const char* HelpText =
-    "F1         \t100 NoStereo\n"
-        "F2         \t100 Stereo                     \t420 Z    \t520 Drift Correction\n"
-        "F3         \t100 StereoHMD                  \t420 F6   \t520 Yaw Drift Info\n"
-        "F4         \t100 MSAA                       \t420 R    \t520 Reset SensorFusion\n"
-        "F9         \t100 FullScreen                 \t420\n"
-        "F11        \t100 Fast FullScreen                   \t500 - +       \t660 Adj EyeHeight\n"
-        "C          \t100 Chromatic Ab                      \t500 [ ]       \t660 Adj FOV\n"
-        "P          \t100 Motion Pred                       \t500 Shift     \t660 Adj Faster\n"
-        "N/M        \t180 Adj Motion Pred\n"
-        "( / )      \t180 Adj EyeDistance";
-
-enum DrawTextCenterType {
-  DrawText_NoCenter = 0,
-  DrawText_VCenter = 0x1,
-  DrawText_HCenter = 0x2,
-  DrawText_Center = DrawText_VCenter | DrawText_HCenter
-};
-
-static void DrawTextBox(RenderDevice* prender, float x, float y, float textSize,
-    const char* text, DrawTextCenterType centerType = DrawText_NoCenter) {
-  float ssize[2] = { 0.0f, 0.0f };
-
-  prender->MeasureText(&DejaVu, text, textSize, ssize);
-
-  // Treat 0 a VCenter.
-  if (centerType & DrawText_HCenter) {
-    x = -ssize[0] / 2;
-  }
-  if (centerType & DrawText_VCenter) {
-    y = -ssize[1] / 2;
-  }
-
-  prender->FillRect(x - 0.02f, y - 0.02f, x + ssize[0] + 0.02f,
-      y + ssize[1] + 0.02f, Color(40, 40, 100, 210));
-  prender->RenderText(&DejaVu, text, x, y, textSize, Color(255, 255, 0, 210));
-}
-
 void HackulusApp::Render(const StereoEyeParams& stereo) {
   pRender->BeginScene(PostProcess);
 
@@ -1227,30 +1245,19 @@ void HackulusApp::Render(const StereoEyeParams& stereo) {
   pRender->SetDepthMode(false, false);
   if (SceneMode != Scene_Grid) {
     FullView.View = stereo.ViewAdjust * View;
-//    printf("\nRaw view\n");
-//    float* raw = &FullView.View.M[0][0];
-//    for (int i = 0; i < 16; i++) {
-//      printf("%f\t", raw[i]);
-//      if((i + 1) % 4 == 0) {
-//        printf("\n");
-//      }
-//    }
-    FullView.CameraView = FullView.View;
-    FullView.CameraView.transpose().splice3dInto4d(FullView.CameraView, FullView.CameraPos);
-//    FullView.CameraPos.w = 10.0f;
-//    FullView.CameraView = Matrix4(FullView.View).convertToTransposed3d();
+    FullView.CameraPos.x += stereo.ViewAdjust.M[0][3];
+    FullView.CameraPos.y += stereo.ViewAdjust.M[1][3];
+    FullView.CameraPos.z += stereo.ViewAdjust.M[2][3];
     //FullView.CameraView.transpose().splice3dInto4d(FullView.CameraView, FullView.CameraPos);
-    //FullView.CameraPos.w = 10.0f;
-    //FullView.CameraView = FullView.CameraView.transpose();
-//    printf("\nView:\n");
-//    Matrix4 temp(FullView.View);
-//    temp.printIt();
-//    printf("Spliced 4:\n");
-//    FullView.CameraView.printIt();
-//    printf("spliced pos:\n");
-//    FullView.CameraPos.printIt();
     FullView.FourToThree.storeIdentity();
     MainScene.Render(pRender, stereo.ViewAdjust * View, &FullView);
+    //printf("\nView:\n");
+    //Matrix4 temp(FullView.View);
+    //temp.printIt();
+    //printf("\nView 4:\n");
+    //FullView.CameraView.printIt();
+    //printf("\nPos 4:\n");
+    //FullView.CameraPos.printIt();
   }
 
   if (SceneMode == Scene_YawView) {
@@ -1483,17 +1490,15 @@ void HackulusApp::PopulateScene(const char *fileName) {
 
 
   typedef std::vector<Color> ColorList;
-  ColorList colorArray;
-  int numSteps = 8;
-  colorArray.reserve(numSteps);
-  for (int steps = 0; steps < numSteps; steps++) {
-    colorArray.push_back(Color(0, (UByte)((float)(steps + 1) / (float)numSteps * 0xFF), 0, 0xFF));
-  }
+  ColorList colorArray = {Color(255,0,0,255), Color(0,255,0,255), Color(0,0,255,255),
+      Color(255,255,0,255), Color(255,0,255,255), Color(0,255,255,255),
+      Color(255,128,0,255), Color(128,255,0,255), Color(128,0,255,255), Color(255,0,128,255)};
 
   fd::Mesh tesseract;
-  Vector4f tesseractOrigin(1.0f,0,0,0);
+  Vector4f tesseractOrigin(1.0f, 0, 0, 0);
 //  tesseract.buildCube(1.0f, fd::Vec4f(0.05f,0.05f,0.05f,0.05f), fd::Vec4f(0, 0, 0, 0));
-  tesseract.buildTesseract(1.0f, fd::Vec4f(0.05f,0.05f,0.05f,0.05f), fd::Vec4f(0.101f, 0.202f, 0.303f, 0.404f)); // fd::Vec4f(0,0,0,0)); // fd::Vec4f(0, 1, 2, 0));
+  tesseract.buildTesseract(1.0f, fd::Vec4f(0.05f, 0.05f, 0.05f, 0.05f),
+      fd::Vec4f(0.101f, 0.202f, 0.303f, 0.404f)); // fd::Vec4f(0,0,0,0)); // fd::Vec4f(0, 1, 2, 0));
   Ptr<Model> tesseractModel = *new Model(Prim_Triangles);
   // TODO: This is ugly inefficient, fix it.
   fd::Vec4f triA, triB, triC;

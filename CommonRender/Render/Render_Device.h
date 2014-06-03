@@ -359,7 +359,7 @@ public:
 //-----------------------------------------------------------------------------------
 
 struct ViewMatrices {
-  Matrix4f View;
+  Matrix4 View;
   Matrix4 CameraView;
   Vector4f CameraPos;
   Matrix4 FourToThree;
