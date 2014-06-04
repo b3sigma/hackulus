@@ -880,6 +880,13 @@ void HackulusApp::OnKey(OVR::KeyCode key, int chr, bool down, int modifiers) {
       }
       break;
 
+    case Key_Slash:
+      printf("\nView 4:\n");
+      FullView.CameraView.printIt();
+      printf("\nPos 4:\n");
+      FullView.CameraPos.printIt();
+      break;
+
       // Holding down Shift key accelerates adjustment velocity.
     case Key_Shift:
       ShiftDown = down;
@@ -1251,13 +1258,6 @@ void HackulusApp::Render(const StereoEyeParams& stereo) {
     //FullView.CameraView.transpose().splice3dInto4d(FullView.CameraView, FullView.CameraPos);
     FullView.FourToThree.storeIdentity();
     MainScene.Render(pRender, stereo.ViewAdjust * View, &FullView);
-    //printf("\nView:\n");
-    //Matrix4 temp(FullView.View);
-    //temp.printIt();
-    //printf("\nView 4:\n");
-    //FullView.CameraView.printIt();
-    //printf("\nPos 4:\n");
-    //FullView.CameraPos.printIt();
   }
 
   if (SceneMode == Scene_YawView) {

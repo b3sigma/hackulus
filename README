@@ -1,6 +1,6 @@
 This isn't interesting yet. Come back later.
 
-* Refactor player movement to be 4d
+* Fix 4d perspective projection
 * Refactor collision to be 4d
 * Setup 3d eye to 4d subspace conversion
 * Setup eye 4d subspace mode toggling
