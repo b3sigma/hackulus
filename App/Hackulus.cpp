@@ -696,24 +696,24 @@ void HackulusApp::OnKey(OVR::KeyCode key, int chr, bool down, int modifiers) {
     case Key_F : {
       ThePlayer.SetInput(Player::MoveOut, down, 1);
     } break;
-//    case 't' : {
-//      _camera.ApplyRollInput(-rollAmount, Camera::RIGHT, Camera::UP);
-//    } break;
-//    case 'g' : {
-//      _camera.ApplyRollInput(rollAmount, Camera::RIGHT, Camera::UP);
-//    } break;
-//    case 'y' : {
-//      _camera.ApplyRollInput(-rollAmount, Camera::INSIDE, Camera::RIGHT);
-//    } break;
-//    case 'h' : {
-//      _camera.ApplyRollInput(rollAmount, Camera::INSIDE, Camera::RIGHT);
-//    } break;
-//    case 'u' : {
-//      _camera.ApplyRollInput(-rollAmount, Camera::UP, Camera::INSIDE);
-//    } break;
-//    case 'j' : {
-//      _camera.ApplyRollInput(rollAmount, Camera::UP, Camera::INSIDE);
-//    } break;
+    case Key_T : {
+      ThePlayer.SetInput(Player::RollRightUp, down, 1);
+    } break;
+    case Key_G : {
+      ThePlayer.SetInput(Player::RollUpRight, down, 1);
+    } break;
+    case Key_Y : {
+      ThePlayer.SetInput(Player::RollInsideRight, down, 1);
+    } break;
+    case Key_H : {
+      ThePlayer.SetInput(Player::RollRightInside, down, 1);
+    } break;
+    case Key_U : {
+      ThePlayer.SetInput(Player::RollUpInside, down, 1);
+    } break;
+    case Key_J : {
+      ThePlayer.SetInput(Player::RollInsideUp, down, 1);
+    } break;
 
     case Key_Minus:
       pAdjustFunc = down ? &HackulusApp::AdjustEyeHeight : 0;
@@ -1174,6 +1174,7 @@ void HackulusApp::OnIdle() {
   }
 
   ThePlayer.EyeYaw -= ThePlayer.GamepadRotate.x * dt;
+  ThePlayer.UpdateInput(dt);
   ThePlayer.HandleCollision(dt, &CollisionModels, &GroundCollisionModels,
       ShiftDown);
 
@@ -1211,6 +1212,8 @@ void HackulusApp::OnIdle() {
   fd::Mat4f::lookAtRH(shiftedEyePos, shiftedEyePos + forward, up, in,
       static_cast<fd::Mat4f&>(FullView.CameraView),
       static_cast<fd::Vec4f&>(FullView.CameraPos));
+
+  FullView.CameraView = FullView.CameraView * ThePlayer.Get4dView();
   // You still bastard, fix this now while there is still time
   FullView.CameraView = FullView.CameraView.transpose();
 
@@ -1498,7 +1501,8 @@ void HackulusApp::PopulateScene(const char *fileName) {
   Vector4f tesseractOrigin(1.0f, 0, 0, 0);
 //  tesseract.buildCube(1.0f, fd::Vec4f(0.05f,0.05f,0.05f,0.05f), fd::Vec4f(0, 0, 0, 0));
   tesseract.buildTesseract(1.0f, fd::Vec4f(0.05f, 0.05f, 0.05f, 0.05f),
-      fd::Vec4f(0.101f, 0.202f, 0.303f, 0.404f)); // fd::Vec4f(0,0,0,0)); // fd::Vec4f(0, 1, 2, 0));
+      fd::Vec4f(0, 0, 0, 1.0f));
+//      fd::Vec4f(0.101f, 0.202f, 0.303f, 0.404f)); // fd::Vec4f(0,0,0,0)); // fd::Vec4f(0, 1, 2, 0));
   Ptr<Model> tesseractModel = *new Model(Prim_Triangles);
   // TODO: This is ugly inefficient, fix it.
   fd::Vec4f triA, triB, triC;

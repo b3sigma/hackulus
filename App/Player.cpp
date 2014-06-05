@@ -24,6 +24,25 @@ void Player::SetInput(InputType type, bool isDown, int mask) {
   Inputs[type] = (isDown) ? Inputs[type] | mask : Inputs[type] & ~mask;
 }
 
+void Player::UpdateInput(double dt) {
+  float rollAmount = 0.125f * 3.14159265358979323f * dt;
+  if (Inputs[RollRightUp]) {
+    camera_.ApplyRollInput(-rollAmount, fd::Camera::RIGHT, fd::Camera::UP);
+  } else if (Inputs[RollUpRight]) {
+    camera_.ApplyRollInput(rollAmount, fd::Camera::RIGHT, fd::Camera::UP);
+  }
+  if (Inputs[RollInsideRight]) {
+    camera_.ApplyRollInput(-rollAmount, fd::Camera::INSIDE, fd::Camera::RIGHT);
+  } else if (Inputs[RollRightInside]) {
+    camera_.ApplyRollInput(rollAmount, fd::Camera::INSIDE, fd::Camera::RIGHT);
+  }
+  if (Inputs[RollUpInside]) {
+    camera_.ApplyRollInput(-rollAmount, fd::Camera::UP, fd::Camera::INSIDE);
+  } else if (Inputs[RollInsideUp]) {
+    camera_.ApplyRollInput(rollAmount, fd::Camera::UP, fd::Camera::INSIDE);
+  }
+}
+
 void Player::HandleCollision(double dt,
     Array<Ptr<CollisionModel> >* collisionModels,
     Array<Ptr<CollisionModel> >* groundCollisionModels, bool shiftDown) {

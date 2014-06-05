@@ -45,14 +45,19 @@ public:
     MoveIn,
     MoveOut,
     RollRightUp,
+    RollUpRight,
     RollInsideRight,
+    RollRightInside,
     RollUpInside,
+    RollInsideUp,
     NumInputTypes,
   };
   void SetInput(InputType type, bool isDown, int mask = 1);
 
 
+
   fd::Camera camera_;
+  const fd::Mat4f& Get4dView() const { return camera_.getCameraMatrix(); }
 
   float UserEyeHeight;
   Vector4f EyePos;
@@ -83,6 +88,8 @@ public:
 
   Player();
   ~Player();
+
+  void UpdateInput(double dt);
 
   // At least collision is ray tracing based, which is probably tractable in 4d.
   // Although it is going to be interesting trying to figure out what everything means in terms
