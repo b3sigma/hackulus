@@ -1500,7 +1500,7 @@ void HackulusApp::PopulateScene(const char *fileName) {
   fd::Mesh tesseract;
   Vector4f tesseractOrigin(1.0f, 0, 0, 0);
 //  tesseract.buildCube(1.0f, fd::Vec4f(0.05f,0.05f,0.05f,0.05f), fd::Vec4f(0, 0, 0, 0));
-  tesseract.buildTesseract(1.0f, fd::Vec4f(0.05f, 0.05f, 0.05f, 0.05f),
+  tesseract.buildTesseract(1.0f, fd::Vec4f(0.05f, 1.05f, 0.05f, 0.05f),
       fd::Vec4f(0, 0, 0, 1.0f));
 //      fd::Vec4f(0.101f, 0.202f, 0.303f, 0.404f)); // fd::Vec4f(0,0,0,0)); // fd::Vec4f(0, 1, 2, 0));
   Ptr<Model> tesseractModel = *new Model(Prim_Triangles);

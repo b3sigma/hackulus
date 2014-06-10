@@ -171,8 +171,8 @@ static const char* StdVertexFourToThreeSrc = R"derp(
       oColor.a = 0.2;
       oColor.rgb = Color.rgb;
       //oColor.g = abs(Color.y);
-      //oColor.r = abs(savedW / 1.0);
-      //oColor.b = abs(threeSpace.x / 1.0);
+      oColor.r = abs(savedW / 1.0);
+      oColor.b = abs(threeSpace.x / 1.0);
       //oColor.rgb = abs(oColor.rgb, vec3(0,0,0));
       oColor.rgb += vec3(0.1,0.1,0.1);
     }
