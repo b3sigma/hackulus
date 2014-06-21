@@ -179,6 +179,7 @@ public:
   int CameraPosLoc;
   int CameraMatrixLoc;
   int FourToThreeLoc;
+  int FourNearFarPlaneLoc;
 
   int TexLoc[8];
   bool UsesLighting;

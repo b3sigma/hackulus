@@ -116,6 +116,7 @@ static const char* StdVertexDebugSrc = R"derp(
     uniform mat4 CameraMatrix;
     uniform mat4 Proj;
     uniform mat4 FourToThree;
+    uniform vec4 FourNearFarPlane; // x = near, y = far, z = enabled
     attribute vec4 Position;
     attribute vec4 Color;
 
@@ -129,6 +130,9 @@ static const char* StdVertexDebugSrc = R"derp(
       cameraSpace = cameraSpace + CameraPos;
       //gl_Position = Proj * cameraSpace;
       vec4 threeSpace = FourToThree * cameraSpace;
+      float fourProjectionScalar = (FourNearFarPlane.y - threeSpace.w) / (FourNearFarPlane.y - FourNearFarPlane.x);
+      //fourProjectionScalar = clamp(fourProjectionScalar, 0.0, 1.0);
+      threeSpace.xy = lerp(threeSpace.xy, threeSpace.xy * fourProjectionScalar, FourNearFarPlane.z);
       float savedW = threeSpace.w;
       threeSpace.w = 1.0;
       oVPos = threeSpace.xyz;
@@ -152,6 +156,7 @@ static const char* StdVertexFourToThreeSrc = R"derp(
     uniform mat4 CameraMatrix;
     uniform mat4 Proj;
     uniform mat4 FourToThree;
+    uniform vec4 FourNearFarPlane; // x = near, y = far, z = enabled
     attribute vec4 Position;
     attribute vec4 Color;
 
@@ -163,6 +168,9 @@ static const char* StdVertexFourToThreeSrc = R"derp(
       vec4 cameraSpace = CameraMatrix * worldSpace;
       cameraSpace = cameraSpace + CameraPos;
       vec4 threeSpace = FourToThree * cameraSpace;
+      float fourProjectionScalar = (FourNearFarPlane.y - threeSpace.w) / (FourNearFarPlane.y - FourNearFarPlane.x);
+      //fourProjectionScalar = clamp(fourProjectionScalar, 0.0, 1.0);
+      threeSpace.xy = lerp(threeSpace.xy, threeSpace.xy * fourProjectionScalar, FourNearFarPlane.z);
       float savedW = threeSpace.w;
       threeSpace.w = 1.0;
       oVPos = threeSpace.xyz;
@@ -635,6 +643,10 @@ void RenderDevice::Render(const Fill* fill, Render::Buffer* vertices,
     glUniformMatrix4fv(shaders->FourToThreeLoc, 1, false, fullView->FourToThree.raw());
   }
 
+  if (fullView && shaders->FourNearFarPlaneLoc >= 0) {
+    glUniform4fv(shaders->FourNearFarPlaneLoc, 1, fullView->FourNearFarPlane.raw());
+  }
+
   if (shaders->UsesLighting && Lighting->Version != shaders->LightingVer) {
     shaders->LightingVer = Lighting->Version;
     Lighting->Set(shaders);
@@ -752,7 +764,7 @@ bool Shader::Compile(const char* src) {
 
 ShaderSet::ShaderSet()
     : WorldMatLoc(0), WorldPosLoc(0), CameraPosLoc(0), CameraMatrixLoc(0)
-     ,FourToThreeLoc(0), ProjLoc(0), ViewLoc(0)
+     ,FourToThreeLoc(0), FourNearFarPlaneLoc(0), ProjLoc(0), ViewLoc(0)
  {
   Prog = glCreateProgram();
 }
@@ -837,6 +849,7 @@ bool ShaderSet::Link() {
   CameraPosLoc = glGetUniformLocation(Prog, "CameraPos");
   CameraMatrixLoc = glGetUniformLocation(Prog, "CameraMatrix");
   FourToThreeLoc = glGetUniformLocation(Prog, "FourToThree");
+  FourNearFarPlaneLoc = glGetUniformLocation(Prog, "FourNearFarPlane");
 
   for (int i = 0; i < 8; i++) {
     char texv[32];

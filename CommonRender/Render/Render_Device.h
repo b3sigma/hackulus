@@ -363,6 +363,10 @@ struct ViewMatrices {
   Matrix4 CameraView;
   Vector4f CameraPos;
   Matrix4 FourToThree;
+  float FourNearPlane;
+  float FourFarPlane;
+  bool ProjectiveFourEnabled;
+  Vector4f FourNearFarPlane; //x=near,y=far,z=enabled
 };
 
 class CollisionModel: public RefCountBase<CollisionModel> {

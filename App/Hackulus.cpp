@@ -70,6 +70,10 @@ public:
   // intended to be called right after SetAdjustMessage.
   void SetAdjustMessageTimeout(float timeout);
 
+  void AdjustFourNear(float dt);
+  void AdjustFourFar(float dt);
+  void ToggleFourProjection();
+
   // Stereo setting adjustment functions.
   // Called with deltaTime when relevant key is held.
   void AdjustFov(float dt);
@@ -223,6 +227,10 @@ HackulusApp::HackulusApp()
     DistortionClearColor(0, 0, 0),
     ShiftDown(false), pAdjustFunc(0), AdjustDirection(1.0f),
     SceneMode(Scene_World), TextScreen(Text_None) {
+  FullView.FourNearPlane = -1.0f;
+  FullView.FourFarPlane = 2.0f;
+  FullView.ProjectiveFourEnabled = true;
+
   Width = 1280;
   Height = 800;
   Screen = 0;
@@ -652,6 +660,45 @@ void HackulusApp::OnKey(OVR::KeyCode key, int chr, bool down, int modifiers) {
           }
         }
         break;
+
+      // Stereo adjustments.
+      case Key_BracketLeft:
+        pAdjustFunc = down ? &HackulusApp::AdjustFov : 0;
+        AdjustDirection = 1;
+        break;
+      case Key_BracketRight:
+        pAdjustFunc = down ? &HackulusApp::AdjustFov : 0;
+        AdjustDirection = -1;
+        break;
+
+      case Key_Minus:
+        pAdjustFunc = down ? &HackulusApp::AdjustEyeHeight : 0;
+        AdjustDirection = -1;
+        break;
+      case Key_Equal:
+        pAdjustFunc = down ? &HackulusApp::AdjustEyeHeight : 0;
+        AdjustDirection = 1;
+        break;
+
+      case Key_Insert:
+      case Key_Num0:
+        pAdjustFunc = down ? &HackulusApp::AdjustIPD : 0;
+        AdjustDirection = 1;
+        break;
+      case Key_Delete:
+      case Key_Num9:
+        pAdjustFunc = down ? &HackulusApp::AdjustIPD : 0;
+        AdjustDirection = -1;
+        break;
+
+      case Key_PageUp:
+        pAdjustFunc = down ? &HackulusApp::AdjustAspect : 0;
+        AdjustDirection = 1;
+        break;
+      case Key_PageDown:
+        pAdjustFunc = down ? &HackulusApp::AdjustAspect : 0;
+        AdjustDirection = -1;
+        break;
     }
     return;
   }
@@ -715,13 +762,28 @@ void HackulusApp::OnKey(OVR::KeyCode key, int chr, bool down, int modifiers) {
       ThePlayer.SetInput(Player::RollInsideUp, down, 1);
     } break;
 
+    case Key_BracketLeft:
+      pAdjustFunc = down ? &HackulusApp::AdjustFourNear : 0;
+      AdjustDirection = 1;
+      break;
+    case Key_BracketRight:
+      pAdjustFunc = down ? &HackulusApp::AdjustFourNear : 0;
+      AdjustDirection = -1;
+      break;
+
     case Key_Minus:
-      pAdjustFunc = down ? &HackulusApp::AdjustEyeHeight : 0;
+      pAdjustFunc = down ? &HackulusApp::AdjustFourFar : 0;
       AdjustDirection = -1;
       break;
     case Key_Equal:
-      pAdjustFunc = down ? &HackulusApp::AdjustEyeHeight : 0;
+      pAdjustFunc = down ? &HackulusApp::AdjustFourFar : 0;
       AdjustDirection = 1;
+      break;
+
+    case Key_Quote:
+      if (down) {
+        ToggleFourProjection();
+      }
       break;
 
     case Key_F1:
@@ -797,36 +859,6 @@ void HackulusApp::OnKey(OVR::KeyCode key, int chr, bool down, int modifiers) {
         pRender->SetParams(RenderParams);
         Screen = 0;
       }
-      break;
-
-      // Stereo adjustments.
-    case Key_BracketLeft:
-      pAdjustFunc = down ? &HackulusApp::AdjustFov : 0;
-      AdjustDirection = 1;
-      break;
-    case Key_BracketRight:
-      pAdjustFunc = down ? &HackulusApp::AdjustFov : 0;
-      AdjustDirection = -1;
-      break;
-
-    case Key_Insert:
-    case Key_Num0:
-      pAdjustFunc = down ? &HackulusApp::AdjustIPD : 0;
-      AdjustDirection = 1;
-      break;
-    case Key_Delete:
-    case Key_Num9:
-      pAdjustFunc = down ? &HackulusApp::AdjustIPD : 0;
-      AdjustDirection = -1;
-      break;
-
-    case Key_PageUp:
-      pAdjustFunc = down ? &HackulusApp::AdjustAspect : 0;
-      AdjustDirection = 1;
-      break;
-    case Key_PageDown:
-      pAdjustFunc = down ? &HackulusApp::AdjustAspect : 0;
-      AdjustDirection = -1;
       break;
 
     case Key_Tab:
@@ -1260,6 +1292,9 @@ void HackulusApp::Render(const StereoEyeParams& stereo) {
     FullView.CameraPos.z += stereo.ViewAdjust.M[2][3];
     //FullView.CameraView.transpose().splice3dInto4d(FullView.CameraView, FullView.CameraPos);
     FullView.FourToThree.storeIdentity();
+    FullView.FourNearFarPlane.x = FullView.FourNearPlane;
+    FullView.FourNearFarPlane.y = FullView.FourFarPlane;
+    FullView.FourNearFarPlane.z = (FullView.ProjectiveFourEnabled) ? 1.0f : 0.0f;
     MainScene.Render(pRender, stereo.ViewAdjust * View, &FullView);
   }
 
@@ -1378,6 +1413,26 @@ void HackulusApp::SetAdjustMessageTimeout(float timeout) {
 }
 
 // ***** View Control Adjustments
+
+void HackulusApp::AdjustFourNear(float dt) {
+  const float kProjectionScalar = 1.0f;
+  FullView.FourNearPlane += kProjectionScalar * dt;
+  SetAdjustMessage("Four proj: near:%f far:%f enabled:%d",
+      FullView.FourNearPlane, FullView.FourFarPlane, FullView.ProjectiveFourEnabled);
+}
+
+void HackulusApp::AdjustFourFar(float dt) {
+  const float kProjectionScalar = 1.0f;
+  FullView.FourFarPlane += kProjectionScalar * dt;
+  SetAdjustMessage("Four proj: near:%f far:%f enabled:%d",
+      FullView.FourNearPlane, FullView.FourFarPlane, FullView.ProjectiveFourEnabled);
+}
+
+void HackulusApp::ToggleFourProjection() {
+  FullView.ProjectiveFourEnabled = !FullView.ProjectiveFourEnabled;
+  SetAdjustMessage("Four proj: near:%f far:%f enabled:%d",
+      FullView.FourNearPlane, FullView.FourFarPlane, FullView.ProjectiveFourEnabled);
+}
 
 void HackulusApp::AdjustFov(float dt) {
   float esd = SConfig.GetEyeToScreenDistance() + 0.01f * dt;
@@ -1498,10 +1553,10 @@ void HackulusApp::PopulateScene(const char *fileName) {
       Color(255,128,0,255), Color(128,255,0,255), Color(128,0,255,255), Color(255,0,128,255)};
 
   fd::Mesh tesseract;
-  Vector4f tesseractOrigin(1.0f, 0, 0, 0);
+  Vector4f tesseractOrigin(1.0f, 1.0f, 0, 0);
 //  tesseract.buildCube(1.0f, fd::Vec4f(0.05f,0.05f,0.05f,0.05f), fd::Vec4f(0, 0, 0, 0));
   tesseract.buildTesseract(1.0f, fd::Vec4f(0.05f, 1.05f, 0.05f, 0.05f),
-      fd::Vec4f(0, 0, 0, 1.0f));
+      fd::Vec4f(0, 0, 0, 0.0f));
 //      fd::Vec4f(0.101f, 0.202f, 0.303f, 0.404f)); // fd::Vec4f(0,0,0,0)); // fd::Vec4f(0, 1, 2, 0));
   Ptr<Model> tesseractModel = *new Model(Prim_Triangles);
   // TODO: This is ugly inefficient, fix it.
